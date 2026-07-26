@@ -1,0 +1,8 @@
+{
+  "references": {
+    "backend": {
+      "path": "../master-it-backend",
+      "description": "The independent Python FastAPI backend repository containing the schema layouts."
+    }
+  }
+}

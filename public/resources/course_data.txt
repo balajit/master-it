@@ -1,0 +1,4 @@
+CSS Grid & Flexbox Mastery|Build complex, responsive layouts with modern CSS techniques and real-world projects.|3|beginner|OPEN
+Node.js Microservices|Design, build, and deploy microservice architectures with Node.js and Docker.|4|advanced|COMING_SOON
+Python for Data Science|Learn pandas, NumPy, and matplotlib to analyze and visualize real-world datasets.|4|intermediate|OPEN
+System Design Fundamentals|Understand scalability, load balancing, caching, and database design for interviews.|3|intermediate|CLOSED
