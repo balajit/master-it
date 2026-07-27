@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, Link } from "react-router";
 import { useAuth } from "../hooks/useAuth";
 import { hasPermission, hasRole } from "../context/auth-context";
@@ -57,12 +57,14 @@ export default function CourseCatalog({ onCourseAdded }: { onCourseAdded?: Cours
     hasRole(user, "Instructor") ||
     hasRole(user, "Administrator") ||
     hasRole(user, "SuperUser");
+  const { logout } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const loggedOutRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,6 +74,7 @@ export default function CourseCatalog({ onCourseAdded }: { onCourseAdded?: Cours
       setError(null);
 
       if (!isAuthenticated) {
+        loggedOutRef.current = false;
         const mock = await fetchMockCourses();
         if (!cancelled) {
           setCourses(mock);
@@ -80,11 +83,18 @@ export default function CourseCatalog({ onCourseAdded }: { onCourseAdded?: Cours
         return;
       }
 
-      const { data, error: err } = await client.GET("/api/courses");
+      const { data, error: err, response } = await client.GET("/api/courses");
       if (cancelled) return;
 
       if (err) {
-        setError("Failed to load courses");
+        if (response?.status === 401 && !loggedOutRef.current) {
+          loggedOutRef.current = true;
+          logout();
+        }
+        const mock = await fetchMockCourses();
+        if (!cancelled) {
+          setCourses(mock);
+        }
       } else if (data.length === 0) {
         setCourses(await fetchMockCourses());
       } else {
@@ -97,7 +107,7 @@ export default function CourseCatalog({ onCourseAdded }: { onCourseAdded?: Cours
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, logout]);
 
   const coursesToShow =
     onCourseAdded && !courses.some((c) => c.id === onCourseAdded.id)
