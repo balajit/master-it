@@ -24,6 +24,7 @@ import type {
   LessonItemDef,
   PracticeCardDef,
 } from "./study";
+import type { ContentNode } from "../types/contentNode";
 import type { LessonStatus } from "../components/study/statusConfig";
 
 // ── Static mock data (ported from the original fully-static StudyPage) ─────────
@@ -160,14 +161,170 @@ const STATIC_MOCK_CONTENT: Record<string, StudyContent> = {
           description: "MOCK Essential terms you'll use throughout",
           state: "completed",
           duration: "MOCK 8 min",
-          content: "MOCK Chemical reactions involve the transformation of one set of chemicals into another. Reactants are the starting materials, and products are the substances formed after the reaction completes. The law of conservation of mass tells us that atoms are neither created nor destroyed — they are simply rearranged into new configurations. Balancing equations ensures the same number of atoms of each element appear on both sides.",
+          content: [
+            {
+              type: "heading",
+              level: 2,
+              text: "Chemical Reactions — Core Definitions",
+            },
+            {
+              type: "paragraph",
+              runs: [
+                {
+                  run_type: "text",
+                  text: "Chemical reactions involve the transformation of one set of chemicals into another. ",
+                },
+                { run_type: "bold", text: "Reactants" },
+                {
+                  run_type: "text",
+                  text: " are the starting materials, and ",
+                },
+                { run_type: "bold", text: "products" },
+                {
+                  run_type: "text",
+                  text: " are the substances formed after the reaction completes.",
+                },
+              ],
+            },
+            {
+              type: "note",
+              variant: "tip",
+              runs: [
+                {
+                  run_type: "text",
+                  text: "The law of conservation of mass states that atoms are neither created nor destroyed — they are simply rearranged.",
+                },
+              ],
+            },
+            {
+              type: "heading",
+              level: 3,
+              text: "Balancing Equations",
+            },
+            {
+              type: "paragraph",
+              runs: [
+                {
+                  run_type: "text",
+                  text: "A balanced equation ensures the same number of atoms of each element appear on both sides. For example, the synthesis of water:",
+                },
+              ],
+            },
+            {
+              type: "equation",
+              latex: "2H_2 + O_2 \\rightarrow 2H_2O",
+              label: "",
+            },
+            {
+              type: "paragraph",
+              runs: [
+                {
+                  run_type: "text",
+                  text: "And the combustion of methane, where each carbon atom produces one ",
+                },
+                { run_type: "eq", latex: "CO_2" },
+                { run_type: "text", text: " molecule:" },
+              ],
+            },
+            {
+              type: "equation",
+              latex: "CH_4 + 2O_2 \\rightarrow CO_2 + 2H_2O",
+              label: "",
+            },
+            {
+              type: "list",
+              style: "bullet",
+              items: [
+                { runs: [{ run_type: "text", text: "Reactants are on the left side of the arrow" }] },
+                { runs: [{ run_type: "text", text: "Products are on the right side of the arrow" }] },
+                { runs: [{ run_type: "text", text: "Coefficients balance atom counts on each side" }] },
+              ],
+            },
+          ] satisfies ContentNode[],
         },
         {
           title: "MOCK Work through the syntax guide",
           description: "MOCK Hands-on walkthrough of basic syntax",
           state: "in_progress",
           duration: "MOCK 10 min",
-          content: "MOCK Balanced equation examples: combustion of methane (CH4 + 2O2 → CO2 + 2H2O), synthesis of water (2H2 + O2 → 2H2O), rust formation (4Fe + 3O2 → 2Fe2O3), photosynthesis (6CO2 + 6H2O → C6H12O6 + 6O2), acid-base neutralization (HCl + NaOH → NaCl + H2O), decomposition of calcium carbonate (CaCO3 → CaO + CO2).",
+          content: [
+            {
+              type: "heading",
+              level: 2,
+              text: "Balanced Equation Examples",
+            },
+            {
+              type: "paragraph",
+              runs: [
+                {
+                  run_type: "text",
+                  text: "Work through each balanced equation below. Notice how the coefficient in front of each formula ensures equal atom counts on both sides.",
+                },
+              ],
+            },
+            {
+              type: "definition",
+              term: "Coefficient",
+              definition:
+                "A number placed in front of a chemical formula in a balanced equation to indicate the relative number of moles of that substance.",
+            },
+            {
+              type: "heading",
+              level: 3,
+              text: "Rust Formation",
+            },
+            {
+              type: "equation",
+              latex: "4Fe + 3O_2 \\rightarrow 2Fe_2O_3",
+              label: "(1)",
+            },
+            {
+              type: "heading",
+              level: 3,
+              text: "Photosynthesis",
+            },
+            {
+              type: "equation",
+              latex: "6CO_2 + 6H_2O \\rightarrow C_6H_{12}O_6 + 6O_2",
+              label: "(2)",
+            },
+            {
+              type: "heading",
+              level: 3,
+              text: "Acid-Base Neutralization",
+            },
+            {
+              type: "paragraph",
+              runs: [
+                { run_type: "text", text: "When hydrochloric acid reacts with sodium hydroxide, " },
+                { run_type: "eq", latex: "HCl + NaOH \\rightarrow NaCl + H_2O" },
+                { run_type: "text", text: ". The resulting salt is " },
+                { run_type: "eq", latex: "NaCl" },
+                { run_type: "text", text: " (table salt)." },
+              ],
+            },
+            {
+              type: "callout",
+              variant: "example",
+              title: "Try It",
+              runs: [
+                {
+                  run_type: "text",
+                  text: "Balance the decomposition of calcium carbonate: CaCO₃ → CaO + CO₂. Is it already balanced? Count the atoms on each side to verify.",
+                },
+              ],
+            },
+            {
+              type: "note",
+              variant: "warning",
+              runs: [
+                {
+                  run_type: "text",
+                  text: "Never change the subscripts inside a chemical formula when balancing — only adjust the coefficients in front.",
+                },
+              ],
+            },
+          ] satisfies ContentNode[],
         },
         { title: "MOCK Follow the interactive tutorial", state: "not_started", duration: "MOCK 7 min" },
       ],

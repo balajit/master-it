@@ -5,8 +5,8 @@
  * implement the StudyService interface and return StudyPageData.
  */
 
-import type { ReactNode } from "react";
 import type { LessonStatus } from "../components/study/statusConfig";
+import type { ContentNode } from "../types/contentNode";
 
 // ── Sidebar ──────────────────────────────────────────────────────────────────
 
@@ -42,8 +42,8 @@ export interface LessonItemDef {
   description?: string;
   state: "completed" | "in_progress" | "not_started";
   duration?: string;
-  /** Rich expandable content — populated from backend lesson body when available. */
-  content?: ReactNode;
+  /** Ordered content nodes for this lesson — populated from backend lesson body when available. */
+  content?: ContentNode[];
 }
 
 export interface PracticeCardDef {

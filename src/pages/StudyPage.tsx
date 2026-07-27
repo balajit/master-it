@@ -9,6 +9,8 @@ import LessonItem from "../components/study/LessonItem";
 import PracticeCard from "../components/study/PracticeCard";
 import GoalCard from "../components/study/GoalCard";
 import NotesCard from "../components/study/NotesCard";
+import ContentCard from "../components/study/ContentCard";
+import LessonContent from "../components/study/LessonContent";
 import { getStudyService } from "../services/getStudyService";
 import type { StudyPageData } from "../services/study";
 
@@ -327,7 +329,13 @@ export default function StudyPage() {
                         description={l.description}
                         state={l.state}
                         duration={l.duration}
-                        content={l.content}
+                        content={
+                          l.content && l.content.length > 0 ? (
+                            <ContentCard subtitle={l.duration}>
+                              <LessonContent nodes={l.content} />
+                            </ContentCard>
+                          ) : undefined
+                        }
                         onClick={() => {}}
                       />
                     ))}
@@ -342,7 +350,13 @@ export default function StudyPage() {
                         description={p.description}
                         state={p.state}
                         duration={p.duration}
-                        content={p.content}
+                        content={
+                          p.content && p.content.length > 0 ? (
+                            <ContentCard subtitle={p.duration}>
+                              <LessonContent nodes={p.content} />
+                            </ContentCard>
+                          ) : undefined
+                        }
                         onClick={() => {}}
                       />
                     ))}
