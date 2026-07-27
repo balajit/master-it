@@ -8,6 +8,7 @@ import LearningCard from "../components/study/LearningCard";
 import LessonItem from "../components/study/LessonItem";
 import PracticeCard from "../components/study/PracticeCard";
 import GoalCard from "../components/study/GoalCard";
+import NotesCard from "../components/study/NotesCard";
 import { getStudyService } from "../services/getStudyService";
 import type { StudyPageData } from "../services/study";
 
@@ -99,6 +100,10 @@ export default function StudyPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // TODO(notes-frontend): Replace notesMap with API calls once backend is ready
+  // TODO(notes-backend): GET /api/notes/{lessonId} on lesson select to populate saved notes
+  // TODO(notes-backend): POST /api/notes/{lessonId} on change/blur to persist notes
+  const [notesMap, setNotesMap] = useState<Record<string, string>>({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarSearch, setSidebarSearch] = useState("");
@@ -301,6 +306,13 @@ export default function StudyPage() {
                 {content.info.body}
               </InfoCard>
             )}
+
+            <NotesCard
+              value={notesMap[selectedId ?? ""] ?? ""}
+              onChange={(text) =>
+                setNotesMap((prev) => ({ ...prev, [selectedId!]: text }))
+              }
+            />
 
             {content?.learning && (
               <LearningCard
