@@ -310,7 +310,7 @@ export default function StudyPage() {
             <NotesCard
               value={notesMap[selectedId ?? ""] ?? ""}
               onChange={(text) =>
-                setNotesMap((prev) => ({ ...prev, [selectedId!]: text }))
+                setNotesMap((prev) => ({ ...prev, [selectedId ?? ""]: text }))
               }
             />
 
