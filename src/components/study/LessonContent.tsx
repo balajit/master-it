@@ -2,14 +2,14 @@
  * LessonContent.tsx — Renders an ordered array of ContentNode objects.
  *
  * Each node type maps to a styled React element. Equation nodes (block and
- * inline) are rendered with KaTeX via react-katex. All other styling uses
- * Tailwind classes.
+ * inline) are rendered with KaTeX directly via katex.renderToString. All
+ * other styling uses Tailwind classes.
  *
  * Usage:
  *   <LessonContent nodes={lesson.content} />
  */
 
-import { InlineMath, BlockMath } from "react-katex";
+import katex from "katex";
 import "katex/dist/katex.min.css";
 import type {
   ContentNode,
@@ -23,15 +23,15 @@ function RenderRun({ run }: { run: InlineRun }) {
   switch (run.run_type) {
     case "text":
       return <span>{run.text}</span>;
-    case "eq":
-      return (
-        <InlineMath
-          math={run.latex}
-          renderError={(err) => (
-            <span className="font-mono text-xs text-red-500">{String(err)}</span>
-          )}
-        />
-      );
+    case "eq": {
+      let html: string;
+      try {
+        html = katex.renderToString(run.latex, { throwOnError: true });
+      } catch (err) {
+        return <span className="font-mono text-xs text-red-500">{String(err)}</span>;
+      }
+      return <span dangerouslySetInnerHTML={{ __html: html }} />;
+    }
     case "bold":
       return <strong className="font-semibold">{run.text}</strong>;
     case "italic":
@@ -172,20 +172,22 @@ function RenderNode({ node, index }: { node: ContentNode; index: number }) {
       );
     }
 
-    case "equation":
+    case "equation": {
+      let html: string;
+      try {
+        html = katex.renderToString(node.latex, { throwOnError: true, displayMode: true });
+      } catch (err) {
+        html = `<span class="font-mono text-xs text-red-500">${String(err)}</span>`;
+      }
       return (
         <div key={index} className="my-3 overflow-x-auto rounded-lg bg-gray-50 px-4 py-3 text-center">
           {node.label && (
             <span className="float-right text-xs text-gray-400">{node.label}</span>
           )}
-          <BlockMath
-            math={node.latex}
-            renderError={(err) => (
-              <span className="font-mono text-xs text-red-500">{String(err)}</span>
-            )}
-          />
+          <span dangerouslySetInnerHTML={{ __html: html }} />
         </div>
       );
+    }
 
     case "code_block":
       return (
