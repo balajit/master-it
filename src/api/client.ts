@@ -12,7 +12,7 @@ export function getAuthToken(): string | null {
 }
 
 const client = createClient<paths>({
-  baseUrl: "http://localhost:5000",
+  baseUrl: import.meta.env.VITE_API_BASE_URL,
   headers: {
     get Authorization() {
       return authToken ? `Bearer ${authToken}` : undefined;

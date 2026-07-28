@@ -83,10 +83,7 @@ export default function FileUpload({
         return;
       }
 
-      const res = await fetch(picked.path);
-      const blob = await res.blob();
-      const file = new File([blob], picked.name, { type: picked.mimeType });
-      await uploadFile(file, picked.name);
+      setError("Selected file could not be read. Please choose a different file.");
     } catch (e) {
       if (e instanceof Error && e.message.includes("cancelled")) return;
       setError(e instanceof Error ? e.message : "File pick failed");
@@ -98,23 +95,7 @@ export default function FileUpload({
     if (!trimmed) return;
 
     reset();
-    setUploading(true);
-
-    try {
-      const res = await fetch(trimmed);
-      if (!res.ok) throw new Error(`Fetch failed (${res.status})`);
-
-      const blob = await res.blob();
-      const name = trimmed.split("/").pop() || "download";
-      const file = new File([blob], name, {
-        type: res.headers.get("content-type") || "application/octet-stream",
-      });
-      await uploadFile(file, name);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Fetch failed");
-    } finally {
-      setUploading(false);
-    }
+    setError("URL import is not available. Please use Choose File.");
   }
 
   return (

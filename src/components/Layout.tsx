@@ -17,14 +17,6 @@ export default function Layout({ children }: LayoutProps) {
   const isContentCreator =
     isAdmin || hasRole(user, "Instructor");
 
-  console.log("[Layout]", JSON.stringify({
-    email: user?.email,
-    isAuthenticated,
-    isAdmin,
-    isContentCreator,
-    roleNames: user?.roles?.map(r => r.name) ?? [],
-  }));
-
   return (
     <div className="flex min-h-dvh flex-col bg-gray-50">
       <header className="sticky top-0 z-50 border-b border-gray-200 bg-white">

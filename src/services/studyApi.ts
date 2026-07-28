@@ -1,4 +1,4 @@
-import client, { getAuthToken } from "../api/client";
+import client from "../api/client";
 import type {
   StudyService,
   StudyPageData,
@@ -9,14 +9,8 @@ import type {
 } from "./study";
 import type { components } from "../api/v1.d.ts";
 
-type StudyPlanDetail  = components["schemas"]["StudyPlanDetail"];
-type StudyPlanLesson  = components["schemas"]["StudyPlanLesson"];
-
-
-interface ResumeResponse {
-  lesson_id: string | null;
-  unit_id:   string | null;
-}
+type Chapter = components["schemas"]["Chapter"];
+type Lesson  = components["schemas"]["Lesson"];
 
 export class ApiStudyService implements StudyService {
   async getStudyPage(courseId: string): Promise<StudyPageData> {
@@ -31,101 +25,69 @@ export class ApiStudyService implements StudyService {
       throw new Error(`Failed to load study plan: ${JSON.stringify(planError)}`);
     }
 
-    let resumeLessonId: string | null = null;
-    try {
-      const token = getAuthToken();
-      const resumeRes = await fetch(
-        `http://localhost:5000/api/v1/users/me/courses/${courseIdNum}/resume`,
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} },
-      );
-      if (resumeRes.ok) {
-        const resumeJson = (await resumeRes.json()) as ResumeResponse;
-        if (resumeJson.lesson_id != null) {
-          resumeLessonId = resumeJson.lesson_id;
-        }
-      }
-    } catch {
-      // Resume endpoint unavailable — fall back to first lesson.
+    const allGroups:        StudyGroup[]                 = [];
+    const allProgressItems: StudyProgressItem[]          = [];
+    const allContentMap:    Record<string, StudyContent> = {};
+    const lessonDbIdMap:    Record<string, number>       = {};
+
+    const chapters = [...(planData.chapters ?? [])].sort((a, b) => a.order - b.order);
+
+    for (const chapter of chapters) {
+      const { group, progressItems } = this._transformChapter(chapter, lessonDbIdMap);
+      allGroups.push(group);
+      allProgressItems.push(...progressItems);
     }
 
-    const allGroups:        StudyGroup[]                = [];
-    const allProgressItems: StudyProgressItem[]         = [];
-    const allContentMap:    Record<string, StudyContent> = {};
-    let lessonCount = 0;
+    let resumeLessonId: string | null = null;
+    const { data: resumeData, error: resumeError } = await client.GET(
+      "/api/v1/users/me/courses/{course_id}/resume",
+      { params: { path: { course_id: courseIdNum } } },
+    );
 
-    for (const sp of planData.study_plans ?? []) {
-      const { groups, progressItems } = this._transformStudyPlan(sp);
-      allGroups.push(...groups);
-      allProgressItems.push(...progressItems);
-      lessonCount += progressItems.length;
+    if (!resumeError && resumeData?.lesson_id != null) {
+      const matchedLesson = Object.entries(lessonDbIdMap).find(
+        ([, dbId]) => dbId === resumeData.lesson_id,
+      );
+      resumeLessonId = matchedLesson?.[0] ?? null;
     }
 
     return {
       courseTitle:   planData.course_title || "Course",
-      lessonCount,
+      lessonCount:   allProgressItems.length,
       totalMinutes:  0,
       groups:        allGroups,
       progressItems: allProgressItems,
       contentMap:    allContentMap,
-      lessonDbIdMap: {},
+      lessonDbIdMap,
       resumeLessonId,
     };
   }
 
-  private _transformStudyPlan(sp: StudyPlanDetail): {
-    groups: StudyGroup[];
-    progressItems: StudyProgressItem[];
-  } {
+  private _transformChapter(
+    chapter: Chapter,
+    lessonDbIdMap: Record<string, number>,
+  ): { group: StudyGroup; progressItems: StudyProgressItem[] } {
     const progressItems: StudyProgressItem[] = [];
-    const milestones = [...(sp.milestones ?? [])].sort((a, b) => a.order - b.order);
-    const lessons = [...(sp.lessons ?? [])].sort((a, b) => a.order - b.order);
+    const lessons = [...(chapter.lessons ?? [])].sort((a, b) => a.order - b.order);
 
-    const groupedLessons = new Map<string, StudyPlanLesson[]>();
-    const ungrouped: StudyPlanLesson[] = [];
-
-    for (const lesson of lessons) {
-      if (lesson.milestone_id) {
-        const existing = groupedLessons.get(lesson.milestone_id) ?? [];
-        existing.push(lesson);
-        groupedLessons.set(lesson.milestone_id, existing);
-      } else {
-        ungrouped.push(lesson);
+    const items: StudyItem[] = lessons.map((lesson: Lesson) => {
+      progressItems.push({
+        id:     lesson.id,
+        label:  lesson.title || "Untitled Lesson",
+        status: "not_started",
+      });
+      if (lesson.lesson_id != null) {
+        lessonDbIdMap[lesson.id] = lesson.lesson_id;
       }
-    }
+      return { id: lesson.id, label: lesson.title || "Untitled Lesson", status: "not_started" as const };
+    });
 
-    const groups: StudyGroup[] = [];
-
-    for (const milestone of milestones) {
-      const msLessons = groupedLessons.get(milestone.id) ?? [];
-      const items: StudyItem[] = msLessons.map((l) => {
-        progressItems.push({
-          id: l.id,
-          label: l.title || "Untitled Lesson",
-          status: "not_started",
-        });
-        return { id: l.id, label: l.title || "Untitled Lesson", status: "not_started" as const };
-      });
-      groups.push({
-        title: milestone.title || "Untitled Milestone",
+    return {
+      group: {
+        title: chapter.title || "Untitled Chapter",
         items,
-      });
-    }
-
-    if (ungrouped.length > 0) {
-      const items: StudyItem[] = ungrouped.map((l) => {
-        progressItems.push({
-          id: l.id,
-          label: l.title || "Untitled Lesson",
-          status: "not_started",
-        });
-        return { id: l.id, label: l.title || "Untitled Lesson", status: "not_started" as const };
-      });
-      groups.push({
-        title: sp.title || "Lessons",
-        items,
-      });
-    }
-
-    return { groups, progressItems };
+      },
+      progressItems,
+    };
   }
 }

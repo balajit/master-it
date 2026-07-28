@@ -47,17 +47,6 @@ export default function RolePermissions({ roles, onRolesUpdated }: Props) {
     };
   }, []);
 
-  useEffect(() => {
-    if (!selectedRole) {
-      setCurrentIds(new Set());
-      setWorkingIds(new Set());
-      return;
-    }
-    const ids = new Set(selectedRole.permissions.map((p) => p.id));
-    setCurrentIds(ids);
-    setWorkingIds(new Set(ids));
-  }, [selectedRole]);
-
   function addPermission(id: number) {
     setWorkingIds((prev) => new Set(prev).add(id));
     setSuccess(false);
@@ -91,13 +80,11 @@ export default function RolePermissions({ roles, onRolesUpdated }: Props) {
       .map((permId) => allPermissions.find((p) => p.id === permId)!.name)
       .filter(Boolean);
 
-    let grantResults: { error: unknown }[] = [];
-    if (permNames.length > 0) {
-      const res = await client.POST("/api/roles/permissions", {
+    const grantResult = permNames.length > 0
+      ? await client.POST("/api/roles/permissions", {
         body: { role_name: roleName, permission_names: permNames },
-      });
-      grantResults = [res];
-    }
+      })
+      : null;
 
     const revokeResults = await Promise.all(
       toRevoke.map((permId) => {
@@ -109,7 +96,7 @@ export default function RolePermissions({ roles, onRolesUpdated }: Props) {
     );
 
     const anyError =
-      grantResults.some((r) => r.error) ||
+      Boolean(grantResult?.error) ||
       revokeResults.some((r) => r.error);
 
     if (anyError) {
@@ -156,7 +143,10 @@ export default function RolePermissions({ roles, onRolesUpdated }: Props) {
             key={role.id}
             type="button"
             onClick={() => {
+              const ids = new Set(role.permissions.map((p) => p.id));
               setSelectedRoleName(role.name);
+              setCurrentIds(ids);
+              setWorkingIds(new Set(ids));
               setSuccess(false);
               setError(null);
             }}

@@ -112,26 +112,26 @@ export default function StudyPage() {
     if (!id) return;
     let cancelled = false;
 
-    setLoading(true);
-    setError(null);
+    async function loadStudyPage() {
+      setLoading(true);
+      setError(null);
 
-    getStudyService()
-      .getStudyPage(id)
-      .then((result) => {
+      try {
+        const result = await getStudyService().getStudyPage(id);
         if (cancelled) return;
         setData(result);
-        // Initialise selected item: resume lesson → first item in first group.
         const resume = result.resumeLessonId;
         const firstItem = result.groups[0]?.items[0]?.id ?? null;
         setSelectedId(resume ?? firstItem);
-      })
-      .catch((err: unknown) => {
+      } catch (err: unknown) {
         if (cancelled) return;
         setError(err instanceof Error ? err.message : "Unknown error");
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    }
+
+    void loadStudyPage();
 
     return () => {
       cancelled = true;

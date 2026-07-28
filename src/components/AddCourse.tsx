@@ -60,7 +60,7 @@ export default function AddCourse({ open, onClose, onAdded }: AddCourseProps) {
       return;
     }
 
-    onAdded({ ...form, id: (data as Record<string, number>).id, created_at: "", updated_at: "" });
+    onAdded({ ...form, id: (data as { id: number }).id, owner_id: 0 } as Course);
     setLoading(false);
     onClose();
   }

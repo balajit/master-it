@@ -15,8 +15,7 @@ vi.mock("../api/client", () => {
           number_of_credits: 3,
           difficulty: "beginner",
           status: "OPEN",
-          created_at: "2024-01-01",
-          updated_at: "2024-01-01",
+          owner_id: 0,
         },
       ],
       error: undefined,
@@ -48,8 +47,7 @@ describe("CourseCatalog new course visibility", () => {
       number_of_credits: 4,
       difficulty: "advanced",
       status: "OPEN" as const,
-      created_at: "2024-06-01",
-      updated_at: "2024-06-01",
+      owner_id: 0,
     };
 
     render(

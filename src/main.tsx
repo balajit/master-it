@@ -7,7 +7,7 @@ import { AuthProvider } from './context/AuthContext.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <GoogleOAuthProvider clientId="1003950515098-buig3d10m7oq73b9hsgedq4cpkpudte5.apps.googleusercontent.com">
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID}>
       <AuthProvider>
         <App />
       </AuthProvider>

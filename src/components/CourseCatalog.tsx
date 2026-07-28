@@ -8,6 +8,13 @@ import AuthModal from "./auth/AuthModal";
 
 type Course = components["schemas"]["Course"];
 
+const MOCK_COURSE_LINES = [
+  "CSS Grid & Flexbox Mastery|Build complex, responsive layouts with modern CSS techniques and real-world projects.|3|beginner|OPEN",
+  "Node.js Microservices|Design, build, and deploy microservice architectures with Node.js and Docker.|4|advanced|COMING_SOON",
+  "Python for Data Science|Learn pandas, NumPy, and matplotlib to analyze and visualize real-world datasets.|4|intermediate|OPEN",
+  "System Design Fundamentals|Understand scalability, load balancing, caching, and database design for interviews.|3|intermediate|CLOSED",
+];
+
 function parseCourseLine(line: string, id: number): Course | null {
   const parts = line.split("|");
   if (parts.length < 5) return null;
@@ -19,16 +26,13 @@ function parseCourseLine(line: string, id: number): Course | null {
     number_of_credits: Number(credits),
     difficulty,
     status: status as Course["status"],
-    created_at: "",
-    updated_at: "",
+    owner_id: 0,
   };
 }
 
 async function fetchMockCourses(): Promise<Course[]> {
-  const res = await fetch("/resources/course_data.txt");
-  if (!res.ok) return [];
-  const text = await res.text();
-  return text
+  return MOCK_COURSE_LINES
+    .join("\n")
     .split("\n")
     .filter((l) => l.trim())
     .map((line, i) => parseCourseLine(line, -(i + 1)))
@@ -83,11 +87,11 @@ export default function CourseCatalog({ onCourseAdded }: { onCourseAdded?: Cours
         return;
       }
 
-      const { data, error: err, response } = await client.GET("/api/courses");
+      const { data, error: err } = await client.GET("/api/courses");
       if (cancelled) return;
 
       if (err) {
-        if (response?.status === 401 && !loggedOutRef.current) {
+        if (!loggedOutRef.current) {
           loggedOutRef.current = true;
           logout();
         }

@@ -4,7 +4,7 @@ import type { components } from "../api/v1.d.ts";
 import Layout from "../components/Layout";
 import RolePermissions from "../components/RolePermissions";
 
-type UserSummary = components["schemas"]["UserSummary"];
+type UserProfile = components["schemas"]["UserProfile"];
 type Role = components["schemas"]["Role"];
 
 const ROLE_COLORS: Record<string, string> = {
@@ -16,12 +16,12 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 export default function UserManagement() {
-  const [users, setUsers] = useState<UserSummary[]>([]);
+  const [users, setUsers] = useState<UserProfile[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [assigningUser, setAssigningUser] = useState<UserSummary | null>(null);
+  const [assigningUser, setAssigningUser] = useState<UserProfile | null>(null);
   const [selectedRole, setSelectedRole] = useState("");
   const [assigning, setAssigning] = useState(false);
 
@@ -42,7 +42,7 @@ export default function UserManagement() {
       if (usersRes.error || rolesRes.error) {
         setError("Failed to load user management data");
       } else {
-        setUsers(usersRes.data as UserSummary[]);
+        setUsers(usersRes.data as UserProfile[]);
         setRoles(rolesRes.data as Role[]);
       }
       setLoading(false);
@@ -69,7 +69,12 @@ export default function UserManagement() {
       setUsers((prev) =>
         prev.map((u) =>
           u.id === assigningUser.id
-            ? { ...u, roles: [...new Set([...u.roles, selectedRole])] }
+            ? {
+                ...u,
+                roles: u.roles.some((r) => r.name === selectedRole)
+                  ? u.roles
+                  : [...u.roles, roles.find((r) => r.name === selectedRole)!].filter(Boolean),
+              }
             : u,
         ),
       );
@@ -86,7 +91,7 @@ export default function UserManagement() {
         return (
           u.name.toLowerCase().includes(q) ||
           u.email.toLowerCase().includes(q) ||
-          u.roles.some((r) => r.toLowerCase().includes(q))
+          u.roles.some((r) => r.name.toLowerCase().includes(q))
         );
       })
     : users;
@@ -172,10 +177,10 @@ export default function UserManagement() {
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {user.roles.map((role) => (
                         <span
-                          key={role}
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${ROLE_COLORS[role] ?? "bg-gray-100 text-gray-600 ring-gray-500/20"}`}
+                          key={role.id}
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${ROLE_COLORS[role.name] ?? "bg-gray-100 text-gray-600 ring-gray-500/20"}`}
                         >
-                          {role}
+                          {role.name}
                         </span>
                       ))}
                     </div>

@@ -58,16 +58,12 @@ export function useNotes(lessonDbId: number | null): UseNotesResult {
     }
 
     if (lessonDbId == null) {
-      setValue("");
-      setStatus("idle");
       noteIdRef.current = null;
       return;
     }
 
     let cancelled = false;
 
-    setStatus("idle");
-    setValue("");
     noteIdRef.current = null;
 
     fetchLessonNotes(lessonDbId).then((notes) => {
@@ -121,5 +117,9 @@ export function useNotes(lessonDbId: number | null): UseNotesResult {
     [save],
   );
 
-  return { value, onChange, status };
+  return {
+    value: lessonDbId == null ? "" : value,
+    onChange,
+    status: lessonDbId == null ? "idle" : status,
+  };
 }

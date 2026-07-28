@@ -84,19 +84,20 @@ export default function CourseManagementPage() {
     setDocsLoading(null);
   }, []);
 
-  useEffect(() => {
-    if (selectedCourse) {
-      fetchDocs(selectedCourse.id);
-    }
-  }, [selectedCourse, fetchDocs]);
-
   function handleCourseAdded(course: Course) {
     setCourses((prev) => [course, ...prev]);
     setSelectedCourse(course);
+    fetchDocs(course.id);
   }
 
   function handleSelectCourse(course: Course) {
-    setSelectedCourse((prev) => (prev?.id === course.id ? null : course));
+    setSelectedCourse((prev) => {
+      const isDeselect = prev?.id === course.id;
+      if (!isDeselect) {
+        fetchDocs(course.id);
+      }
+      return isDeselect ? null : course;
+    });
   }
 
   async function handleDeleteCourse() {

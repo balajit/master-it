@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { StatusDot } from "./ui";
 
 type LessonState = "completed" | "in_progress" | "not_started";
 

@@ -88,7 +88,7 @@ function makeContent(id: string): StudyContent {
 }
 
 export class MockStudyService implements StudyService {
-  async getStudyPage(_courseId: string): Promise<StudyPageData> {
+  async getStudyPage(courseId: string): Promise<StudyPageData> {
     const allIds = MOCK_GROUPS.flatMap((g) =>
       g.items.flatMap((i) => [i, ...(i.children ?? [])]),
     ).map((i) => i.id);
@@ -105,7 +105,7 @@ export class MockStudyService implements StudyService {
     }
 
     return {
-      courseTitle: "Sample Course",
+      courseTitle: `Sample Course ${courseId}`,
       lessonCount: allIds.length,
       totalMinutes: 0,
       groups: MOCK_GROUPS,
