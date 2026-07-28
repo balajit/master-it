@@ -78,9 +78,11 @@ function ChapterSection({ chapter }: { chapter: Chapter }) {
 export default function CourseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const courseId = Number(id);
+  const hasValidCourseId = Number.isFinite(courseId);
 
   const [course, setCourse] = useState<Course | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(hasValidCourseId);
   const [error, setError] = useState<string | null>(null);
 
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -92,29 +94,25 @@ export default function CourseDetailPage() {
   const [planLoading, setPlanLoading] = useState(true);
 
   useEffect(() => {
+    if (!hasValidCourseId) return;
     let cancelled = false;
 
     async function load() {
       setLoading(true);
       setError(null);
 
-      const { data, error: err } = await client.GET("/api/courses");
+      const { data, error: err } = await client.GET("/api/v1/courses/{course_id}", {
+        params: { path: { course_id: courseId } },
+      });
       if (cancelled) return;
 
-      if (err) {
-        setError("Failed to load courses");
+      if (err || !data) {
+        setError("Failed to load course");
         setLoading(false);
         return;
       }
 
-      const found = data.find((c) => c.id === Number(id));
-      if (!found) {
-        setError("Course not found");
-        setLoading(false);
-        return;
-      }
-
-      setCourse(found);
+      setCourse(data);
       setLoading(false);
     }
 
@@ -122,17 +120,18 @@ export default function CourseDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [courseId, hasValidCourseId]);
 
   useEffect(() => {
     if (!course) return;
     let cancelled = false;
+    const courseId = course.id;
 
     async function loadDocs() {
       setDocsLoading(true);
       const { data } = await client.GET(
         "/api/courses/{course_id}/documents",
-        { params: { path: { course_id: course!.id } } },
+        { params: { path: { course_id: courseId } } },
       );
       if (!cancelled && data) setDocuments(data);
       setDocsLoading(false);
@@ -142,7 +141,7 @@ export default function CourseDetailPage() {
       setPlanLoading(true);
       const { data } = await client.GET(
         "/api/courses/{course_id}/study-plan",
-        { params: { path: { course_id: course!.id } } },
+        { params: { path: { course_id: courseId } } },
       );
       if (!cancelled && data) setStudyPlan(data);
       setPlanLoading(false);
@@ -178,6 +177,12 @@ export default function CourseDetailPage() {
           <div className="flex flex-col gap-4">
             <div className="h-40 animate-pulse rounded-2xl bg-gray-100" />
             <div className="h-48 animate-pulse rounded-2xl bg-gray-100" />
+          </div>
+        )}
+
+        {!hasValidCourseId && (
+          <div className="rounded-xl bg-red-50 p-4 text-sm text-red-700">
+            Invalid course id
           </div>
         )}
 

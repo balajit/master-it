@@ -7,12 +7,16 @@ import FileUpload from "../components/FileUpload";
 
 type Course = components["schemas"]["Course"];
 
+const DIFFICULTY_OPTIONS = ["beginner", "intermediate", "advanced"] as const;
+
 export default function EditCoursePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const courseId = Number(id);
+  const hasValidCourseId = Number.isFinite(courseId);
 
   const [course, setCourse] = useState<Course | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(hasValidCourseId);
   const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
@@ -24,35 +28,31 @@ export default function EditCoursePage() {
   });
 
   useEffect(() => {
+    if (!hasValidCourseId) return;
     let cancelled = false;
 
     async function load() {
       setLoading(true);
       setError(null);
 
-      const { data, error: err } = await client.GET("/api/courses");
+      const { data, error: err } = await client.GET("/api/v1/courses/{course_id}", {
+        params: { path: { course_id: courseId } },
+      });
       if (cancelled) return;
 
-      if (err) {
-        setError("Failed to load courses");
+      if (err || !data) {
+        setError("Failed to load course");
         setLoading(false);
         return;
       }
 
-      const found = data.find((c) => c.id === Number(id));
-      if (!found) {
-        setError("Course not found");
-        setLoading(false);
-        return;
-      }
-
-      setCourse(found);
+      setCourse(data);
       setForm({
-        title: found.title,
-        description: found.description,
-        number_of_credits: found.number_of_credits,
-        difficulty: found.difficulty,
-        status: found.status,
+        title: data.title,
+        description: data.description,
+        number_of_credits: data.number_of_credits,
+        difficulty: data.difficulty,
+        status: data.status,
       });
       setLoading(false);
     }
@@ -61,14 +61,46 @@ export default function EditCoursePage() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [courseId, hasValidCourseId]);
 
-  function handleChange() {
-    // no-op — editing not available yet
+  function handleChange(
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) {
+    const { name, value } = e.target;
+
+    if (name === "number_of_credits") {
+      setForm((prev) => ({
+        ...prev,
+        number_of_credits: Math.max(1, Math.min(10, Number(value) || 1)),
+      }));
+      return;
+    }
+
+    if (name === "difficulty") {
+      if (!DIFFICULTY_OPTIONS.includes(value as typeof DIFFICULTY_OPTIONS[number])) {
+        return;
+      }
+      setForm((prev) => ({ ...prev, difficulty: value }));
+      return;
+    }
+
+    if (name === "status") {
+      const nextStatus = value as Course["status"];
+      if (!["OPEN", "CLOSED", "COMING_SOON"].includes(nextStatus)) {
+        return;
+      }
+      setForm((prev) => ({ ...prev, status: nextStatus }));
+      return;
+    }
+
+    setForm((prev) => ({ ...prev, [name]: value }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError("Course editing endpoint is not available yet. Document uploads are available below.");
   }
 
   return (
@@ -106,6 +138,12 @@ export default function EditCoursePage() {
           </div>
         )}
 
+        {!hasValidCourseId && (
+          <div className="rounded-xl bg-red-50 p-4 text-sm text-red-700">
+            Invalid course id
+          </div>
+        )}
+
         {!loading && !error && course && (
           <>
             <form
@@ -136,7 +174,6 @@ export default function EditCoursePage() {
                     required
                     value={form.title}
                     onChange={handleChange}
-                    disabled
                     className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm shadow-sm placeholder:text-gray-400"
                   />
                 </div>
@@ -155,7 +192,6 @@ export default function EditCoursePage() {
                     rows={3}
                     value={form.description}
                     onChange={handleChange}
-                    disabled
                     className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm shadow-sm placeholder:text-gray-400"
                   />
                 </div>
@@ -177,9 +213,8 @@ export default function EditCoursePage() {
                       required
                       value={form.number_of_credits}
                       onChange={handleChange}
-                      disabled
-                      className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm shadow-sm placeholder:text-gray-400"
-                    />
+                       className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm shadow-sm placeholder:text-gray-400"
+                     />
                   </div>
 
                   <div>
@@ -194,9 +229,8 @@ export default function EditCoursePage() {
                       name="difficulty"
                       value={form.difficulty}
                       onChange={handleChange}
-                      disabled
-                      className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm shadow-sm"
-                    >
+                       className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm shadow-sm"
+                     >
                       <option value="beginner">Beginner</option>
                       <option value="intermediate">Intermediate</option>
                       <option value="advanced">Advanced</option>
@@ -216,9 +250,8 @@ export default function EditCoursePage() {
                       name="status"
                       value={form.status}
                       onChange={handleChange}
-                      disabled
-                      className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm shadow-sm"
-                    >
+                       className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm shadow-sm"
+                     >
                     <option value="OPEN">Open</option>
                     <option value="CLOSED">Closed</option>
                     <option value="COMING_SOON">Coming Soon</option>
@@ -227,9 +260,17 @@ export default function EditCoursePage() {
               </div>
 
               <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-700">
-                Course editing is not yet available. You can upload documents
-                below.
+                Editing fields are enabled so you can prepare changes, but saving
+                is temporarily disabled until the backend update endpoint is
+                available. You can upload documents below.
               </div>
+
+              <button
+                type="submit"
+                className="self-end rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+              >
+                Save Changes
+              </button>
             </form>
 
             <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5 sm:p-6">

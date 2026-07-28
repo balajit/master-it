@@ -1,75 +1,86 @@
-# React + TypeScript + Vite
+# master-it frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend for the master-it learning platform.
 
-Currently, two official plugins are available:
+This app is built with React + TypeScript + Vite and integrates with the backend API through generated OpenAPI types and `openapi-fetch`.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Tech stack
 
-## React Compiler
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS v4
+- React Router
+- Vitest + Testing Library
+- ESLint
+- Capacitor (Android config present)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Backend relationship
 
-## Expanding the ESLint configuration
+- Backend reference repo: `../master-it-backend`
+- Do not edit the backend from this repository.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Requirements
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Node.js 24+
+- npm 10+
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Environment variables
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Create a `.env.local` file in the project root:
 
+```bash
+VITE_API_BASE_URL=http://localhost:5000
+VITE_GOOGLE_OAUTH_CLIENT_ID=your_google_client_id
+VITE_USE_MOCK_STUDY=false
+VITE_USE_MOCK_DASHBOARD=false
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Notes:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- Set `VITE_USE_MOCK_STUDY=true` to force mock study page data.
+- Set `VITE_USE_MOCK_DASHBOARD=true` to force mock dashboard data.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Install
 
+```bash
+npm ci
 ```
+
+## Run locally
+
+```bash
+npm run dev
+```
+
+## Quality checks
+
+```bash
+npm run lint
+npm test
+npm run build
+```
+
+## API type generation
+
+Always generate API types from the backend spec instead of hand-writing API interfaces.
+
+```bash
+npx openapi-typescript http://localhost:5000/api/spec --output src/api/v1.d.ts
+```
+
+## Architectural rules
+
+- Do not write manual `fetch` calls for backend endpoints.
+- Do not hand-write backend contract interfaces.
+- Use the typed API client in `src/api/client.ts` with generated types in `src/api/v1.d.ts`.
+
+## Mobile / Capacitor
+
+- Capacitor config is in `capacitor.config.ts`.
+- Android project is under `android/`.
+
+## Current status
+
+- P0 and P1 hardening items are complete (lint/build clean, key architecture fixes applied).
+- P2 focuses on docs, CI, and broader test coverage.

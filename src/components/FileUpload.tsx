@@ -10,6 +10,32 @@ const ACCEPTED_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 
+const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+
+function isAllowedType(mimeType: string): boolean {
+  return ACCEPTED_TYPES.includes(mimeType);
+}
+
+function validateFile(file: File): string | null {
+  if (file.size <= 0) return "File is empty";
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    return `File exceeds ${formatBytes(MAX_FILE_SIZE_BYTES)} limit`;
+  }
+  if (!isAllowedType(file.type)) {
+    return "Unsupported file type";
+  }
+  return null;
+}
+
+function isSafeUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -34,6 +60,12 @@ export default function FileUpload({
   }
 
   async function uploadFile(file: File, label: string) {
+    const validationError = validateFile(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     reset();
     setUploading(true);
 
@@ -71,6 +103,10 @@ export default function FileUpload({
       if (!picked) return;
 
       if (picked.blob) {
+        if (!isAllowedType(picked.mimeType)) {
+          setError("Unsupported file type");
+          return;
+        }
         const file = new File([picked.blob], picked.name, {
           type: picked.mimeType,
         });
@@ -95,7 +131,13 @@ export default function FileUpload({
     if (!trimmed) return;
 
     reset();
-    setError("URL import is not available. Please use Choose File.");
+
+    if (!isSafeUrl(trimmed)) {
+      setError("Only valid HTTPS URLs are allowed");
+      return;
+    }
+
+    setError("URL import is currently disabled. Download and upload the file directly.");
   }
 
   return (
@@ -118,6 +160,9 @@ export default function FileUpload({
         </svg>
         <p className="text-sm text-gray-500">
           PDF, Markdown, TXT, or Word document
+        </p>
+        <p className="text-xs text-gray-400">
+          Max file size: {formatBytes(MAX_FILE_SIZE_BYTES)}
         </p>
         <button
           type="button"

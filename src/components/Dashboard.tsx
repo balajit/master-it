@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useAuth } from "../hooks/useAuth";
 import { hasPermission } from "../context/auth-context";
 import AddCourse from "./AddCourse";
+import client from "../api/client";
 import type { components } from "../api/v1.d.ts";
 
 type ApiCourse = components["schemas"]["Course"];
+type UserProgressResponse = components["schemas"]["UserProgressResponse"];
 
 interface Course {
-  id: string;
+  id: number;
   name: string;
   description: string;
   progress: number;
@@ -19,7 +21,7 @@ interface Course {
 
 const MOCK_COURSES: Course[] = [
   {
-    id: "1",
+    id: 1,
     name: "Advanced TypeScript Patterns",
     description:
       "Master generics, conditional types, mapped types, and utility types for enterprise-grade applications.",
@@ -29,7 +31,7 @@ const MOCK_COURSES: Course[] = [
     lastAccessed: "2 hours ago",
   },
   {
-    id: "2",
+    id: 2,
     name: "React Performance Optimization",
     description:
       "Deep dive into memoization, code splitting, virtualization, and profiling techniques.",
@@ -39,7 +41,7 @@ const MOCK_COURSES: Course[] = [
     lastAccessed: "Yesterday",
   },
   {
-    id: "3",
+    id: 3,
     name: "Full-Stack API Design",
     description:
       "Build robust REST and GraphQL APIs with authentication, rate limiting, and documentation.",
@@ -91,11 +93,123 @@ function ProgressRing({ progress }: { progress: number }) {
   );
 }
 
+function formatLastAccessed(isoDate: string | null): string {
+  if (!isoDate) return "Not started";
+  const ts = Date.parse(isoDate);
+  if (!Number.isFinite(ts)) return "Recently";
+  const diffMs = Date.now() - ts;
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+function isCompletedStatus(status: string): boolean {
+  const normalized = status.toLowerCase();
+  return normalized === "completed" || normalized === "mastered";
+}
+
+async function buildCourseFromApi(
+  course: ApiCourse,
+  progress: UserProgressResponse,
+): Promise<Course> {
+  const { data: planData } = await client.GET(
+    "/api/courses/{course_id}/study-plan",
+    { params: { path: { course_id: course.id } } },
+  );
+
+  const lessonIds = (planData?.chapters ?? [])
+    .flatMap((chapter) => chapter.lessons ?? [])
+    .map((lesson) => lesson.lesson_id)
+    .filter((lessonId): lessonId is number => lessonId != null);
+
+  const progressByLessonId = new Map(
+    progress.lessons.map((lesson) => [lesson.lesson_id, lesson]),
+  );
+
+  const matchedProgress = lessonIds
+    .map((lessonId) => progressByLessonId.get(lessonId))
+    .filter((item): item is NonNullable<typeof item> => item != null);
+
+  const completedLessons = matchedProgress.filter((item) =>
+    isCompletedStatus(item.status),
+  ).length;
+  const totalLessons = lessonIds.length;
+  const progressPct =
+    totalLessons === 0 ? 0 : Math.round((completedLessons / totalLessons) * 100);
+
+  const latestCompletedAt = matchedProgress
+    .map((item) => item.completed_at)
+    .filter((value): value is string => Boolean(value))
+    .sort((a, b) => Date.parse(b) - Date.parse(a))[0] ?? null;
+
+  return {
+    id: course.id,
+    name: course.title,
+    description: course.description,
+    progress: progressPct,
+    totalLessons,
+    completedLessons,
+    lastAccessed: formatLastAccessed(latestCompletedAt),
+  };
+}
+
 export default function Dashboard({ onCourseAdded }: { onCourseAdded: (course: ApiCourse) => void }) {
   const { user } = useAuth();
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const canCreateCourse = hasPermission(user, "course:create") || hasPermission(user, "*");
+  const useMockDashboard = import.meta.env.VITE_USE_MOCK_DASHBOARD === "true";
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDashboard() {
+      setLoading(true);
+      setError(null);
+
+      if (useMockDashboard) {
+        if (!cancelled) {
+          setCourses(MOCK_COURSES);
+          setLoading(false);
+        }
+        return;
+      }
+
+      const [{ data: apiCourses, error: coursesError }, { data: progress, error: progressError }] = await Promise.all([
+        client.GET("/api/v1/courses"),
+        client.GET("/api/v1/users/me/progress"),
+      ]);
+
+      if (cancelled) return;
+
+      if (coursesError || progressError || !apiCourses || !progress) {
+        setError("Failed to load dashboard data");
+        setCourses([]);
+        setLoading(false);
+        return;
+      }
+
+      const resolved = await Promise.all(
+        apiCourses.map((course) => buildCourseFromApi(course, progress)),
+      );
+
+      if (cancelled) return;
+      setCourses(resolved);
+      setLoading(false);
+    }
+
+    void loadDashboard();
+    return () => {
+      cancelled = true;
+    };
+  }, [useMockDashboard]);
 
   function handleCourseAdded(course: ApiCourse) {
     onCourseAdded(course);
@@ -133,7 +247,25 @@ export default function Dashboard({ onCourseAdded }: { onCourseAdded: (course: A
       <div className="flex flex-col gap-4">
         <h2 className="text-base font-semibold text-gray-900">My Courses</h2>
 
-        {MOCK_COURSES.map((course) => {
+        {loading && (
+          <div className="flex flex-col gap-3">
+            {[1, 2].map((n) => (
+              <div key={n} className="h-28 animate-pulse rounded-2xl bg-gray-100" />
+            ))}
+          </div>
+        )}
+
+        {error && !loading && (
+          <div className="rounded-xl bg-red-50 p-4 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        {!loading && !error && courses.length === 0 && (
+          <p className="text-sm text-gray-500">No courses yet.</p>
+        )}
+
+        {!loading && !error && courses.map((course) => {
           const isExpanded = expandedId === course.id;
           return (
             <div
