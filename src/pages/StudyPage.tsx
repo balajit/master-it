@@ -138,6 +138,10 @@ export default function StudyPage() {
     };
   }, [id]);
 
+  // ── Notes integration (must be before early returns — hooks order) ──
+  const lessonDbId = data && selectedId != null ? (data.lessonDbIdMap[selectedId] ?? null) : null;
+  const notes = useNotes(lessonDbId);
+
   // ── Loading / error states ──────────────────────────────────────────
   if (loading) return <LoadingSkeleton />;
   if (error)   return <ErrorState message={error} courseId={id} />;
@@ -168,10 +172,6 @@ export default function StudyPage() {
     data.groups.find((g) => g.items.some((i) => i.id === selectedId))?.title ?? "";
 
   const content = selectedId ? (data.contentMap[selectedId] ?? null) : null;
-
-  // ── Notes integration ───────────────────────────────────────────────
-  const lessonDbId = selectedId != null ? (data.lessonDbIdMap[selectedId] ?? null) : null;
-  const notes = useNotes(lessonDbId);
 
   return (
     <div className="grid h-dvh grid-rows-[auto_1fr] bg-gray-50">

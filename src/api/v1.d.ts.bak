@@ -203,7 +203,15 @@ export interface paths {
         };
         /**
          * Get Course Study Plan
-         * @description Return study plans for all documents attached to a course.
+         * @description Return the book-structured study plan for a course.
+         *
+         *     Reads the CanonicalBook produced by Pipeline 2 (BookPipeline) from the
+         *     learning_platform database.  The response is structured as:
+         *         Course → Chapter → Lesson → Page → ContentItem
+         *
+         *     Each Lesson in the response includes:
+         *       - lesson_id: master-it LessonModel.id (int) — use with progress/notes/flashcard APIs
+         *       - unit_id: master-it UnitModel.id (int) — use with unit-scoped notes/flashcard APIs
          */
         get: operations["get_course_study_plan_api_courses__course_id__study_plan_get"];
         put?: never;
@@ -355,7 +363,7 @@ export interface paths {
         };
         /**
          * Get Document Study Plan
-         * @description Return the study plan for a processed document.
+         * @description Return the study plan summary for a processed document.
          */
         get: operations["get_document_study_plan_api_documents__document_id__study_plan_get"];
         put?: never;
@@ -1289,6 +1297,31 @@ export interface components {
          */
         CardStatus: "not_started" | "in_progress" | "completed" | "mastered" | "locked" | "practiced" | "attempted";
         /**
+         * Chapter
+         * @description A chapter within a course — contains ordered lessons.
+         */
+        Chapter: {
+            /** Id */
+            id: string;
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Lessons
+             * @default []
+             */
+            lessons: components["schemas"]["Lesson"][];
+            /** Unit Id */
+            unit_id?: number | null;
+        };
+        /**
          * CodeBlockNode
          * @description A verbatim code listing.
          */
@@ -1305,6 +1338,32 @@ export interface components {
             language: string;
             /** Code */
             code: string;
+        };
+        /** CodeItem */
+        CodeItem: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "code";
+            /** Id */
+            id: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+            /** Language */
+            language?: string | null;
+            /** Bbox */
+            bbox?: {
+                [key: string]: unknown;
+            } | null;
         };
         /**
          * CodeRun
@@ -1356,7 +1415,10 @@ export interface components {
              */
             status: "OPEN" | "CLOSED" | "COMING_SOON";
         };
-        /** CourseStudyPlanResponse */
+        /**
+         * CourseStudyPlanResponse
+         * @description Response for GET /api/courses/{course_id}/study-plan.
+         */
         CourseStudyPlanResponse: {
             /** Course Id */
             course_id: number;
@@ -1366,15 +1428,10 @@ export interface components {
              */
             course_title: string;
             /**
-             * Documents Processed
-             * @default 0
-             */
-            documents_processed: number;
-            /**
-             * Study Plans
+             * Chapters
              * @default []
              */
-            study_plans: components["schemas"]["StudyPlanDetail"][];
+            chapters: components["schemas"]["Chapter"][];
         };
         /** CreatePermission */
         CreatePermission: {
@@ -1402,6 +1459,157 @@ export interface components {
          * @enum {string}
          */
         DifficultyLevel: "beginner" | "intermediate" | "advanced";
+        /** Document */
+        Document: {
+            /** Id */
+            id: string;
+            /** Filename */
+            filename: string;
+            /** Storage Path */
+            storage_path: string;
+            /** Content Type */
+            content_type: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Created At */
+            created_at: string;
+        };
+        /**
+         * DocumentConcept
+         * @description A single concept extracted from a document.
+         */
+        DocumentConcept: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Category */
+            category: string;
+            /** Importance */
+            importance: number;
+        };
+        /**
+         * DocumentConceptsResponse
+         * @description Response for GET /api/documents/{document_id}/concepts.
+         */
+        DocumentConceptsResponse: {
+            /** Doc Id */
+            doc_id: string;
+            /** Concepts */
+            concepts: components["schemas"]["DocumentConcept"][];
+            /** Total Concepts */
+            total_concepts: number;
+            /** Total Relationships */
+            total_relationships: number;
+        };
+        /**
+         * DocumentExportResponse
+         * @description Response for GET /api/documents/{document_id}/export/json.
+         */
+        DocumentExportResponse: {
+            /** Doc Id */
+            doc_id: string;
+            /** Export Dir */
+            export_dir: string;
+            /** Files */
+            files: string[];
+        };
+        /**
+         * DocumentProcessResponse
+         * @description Response for POST /api/documents/{document_id}/process.
+         */
+        DocumentProcessResponse: {
+            /** Doc Id */
+            doc_id: string;
+            /** Title */
+            title: string;
+            /** Units Count */
+            units_count: number;
+            /** Concepts Count */
+            concepts_count: number;
+            /** Graph Nodes */
+            graph_nodes: number;
+            /** Graph Edges */
+            graph_edges: number;
+            /** Lessons */
+            lessons: number;
+            /** Milestones */
+            milestones: number;
+        };
+        /**
+         * DocumentStudyPlanSummary
+         * @description Response for GET /api/documents/{document_id}/study-plan.
+         */
+        DocumentStudyPlanSummary: {
+            /** Doc Id */
+            doc_id: string;
+            /** Title */
+            title: string;
+            /** Total Lessons */
+            total_lessons: number;
+            /** Total Estimated Minutes */
+            total_estimated_minutes: number;
+            /** Milestones */
+            milestones: number;
+        };
+        /**
+         * DocumentTreeResponse
+         * @description Response for GET /api/documents/{document_id}/tree.
+         */
+        DocumentTreeResponse: {
+            /** Doc Id */
+            doc_id: string;
+            /** Title */
+            title: string;
+            /** Total Nodes */
+            total_nodes: number;
+        };
+        /**
+         * DocumentUnit
+         * @description A single learning unit within a document.
+         */
+        DocumentUnit: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Unit Type */
+            unit_type: string;
+            /** Difficulty */
+            difficulty: string;
+            /** Estimated Study Time Minutes */
+            estimated_study_time_minutes: number;
+        };
+        /**
+         * DocumentUnitsResponse
+         * @description Response for GET /api/documents/{document_id}/units.
+         */
+        DocumentUnitsResponse: {
+            /** Doc Id */
+            doc_id: string;
+            /** Units */
+            units: components["schemas"]["DocumentUnit"][];
+            /** Count */
+            count: number;
+        };
+        /**
+         * DocumentUploadResponse
+         * @description Response for POST /api/courses/{course_id}/documents.
+         */
+        DocumentUploadResponse: {
+            /** Id */
+            id: string;
+            /** Filename */
+            filename: string;
+            /** Storage Path */
+            storage_path: string;
+            /** Content Type */
+            content_type: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Created At */
+            created_at: string;
+        };
         /**
          * EnrollRequest
          * @description Request body for course enrollment.
@@ -1455,6 +1663,32 @@ export interface components {
             run_type: "eq";
             /** Latex */
             latex: string;
+        };
+        /** EquationItem */
+        EquationItem: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "equation";
+            /** Id */
+            id: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Latex
+             * @default
+             */
+            latex: string;
+            /** Label */
+            label?: string | null;
+            /** Bbox */
+            bbox?: {
+                [key: string]: unknown;
+            } | null;
         };
         /**
          * EquationNode
@@ -1695,6 +1929,39 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HeadingItem */
+        HeadingItem: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "heading";
+            /** Id */
+            id: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+            /**
+             * Level
+             * @default 1
+             */
+            level: number;
+            /** Bbox */
+            bbox?: {
+                [key: string]: unknown;
+            } | null;
+            /** Style */
+            style?: {
+                [key: string]: unknown;
+            } | null;
+        };
         /**
          * HeadingNode
          * @description A section heading.
@@ -1717,6 +1984,32 @@ export interface components {
             number: string;
             /** Text */
             text: string;
+        };
+        /** ImageItem */
+        ImageItem: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "image";
+            /** Id */
+            id: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Data
+             * @default
+             */
+            data: string;
+            /** Caption */
+            caption?: string | null;
+            /** Bbox */
+            bbox?: {
+                [key: string]: unknown;
+            } | null;
         };
         /**
          * ItalicRun
@@ -1745,6 +2038,33 @@ export interface components {
              * @default 0
              */
             order: number;
+        };
+        /**
+         * Lesson
+         * @description A lesson within a chapter — contains ordered pages.
+         */
+        Lesson: {
+            /** Id */
+            id: string;
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Pages
+             * @default []
+             */
+            pages: components["schemas"]["Page"][];
+            /** Lesson Id */
+            lesson_id?: number | null;
+            /** Unit Id */
+            unit_id?: number | null;
         };
         /**
          * LessonCardSchema
@@ -1950,6 +2270,39 @@ export interface components {
             text: string;
             /** Href */
             href: string;
+        };
+        /** ListItem */
+        ListItem: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "list";
+            /** Id */
+            id: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Ordered
+             * @default false
+             */
+            ordered: boolean;
+            /**
+             * Items
+             * @default []
+             */
+            items: string[];
+            /** Bbox */
+            bbox?: {
+                [key: string]: unknown;
+            } | null;
+            /** Style */
+            style?: {
+                [key: string]: unknown;
+            } | null;
         };
         /**
          * ListItemNode
@@ -2250,6 +2603,29 @@ export interface components {
          * @enum {string}
          */
         OrderingStrategy: "by_study_plan" | "by_title_alpha" | "by_difficulty" | "by_estimated_time";
+        /**
+         * Page
+         * @description A page within a lesson — contains ordered content items.
+         */
+        Page: {
+            /** Id */
+            id: string;
+            /**
+             * Page Number
+             * @default 0
+             */
+            page_number: number;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Items
+             * @default []
+             */
+            items: (components["schemas"]["TextItem"] | components["schemas"]["HeadingItem"] | components["schemas"]["ImageItem"] | components["schemas"]["TableItem"] | components["schemas"]["EquationItem"] | components["schemas"]["CodeItem"] | components["schemas"]["ListItem"])[];
+        };
         /**
          * PageViewSchema
          * @description Schema for PageView in API response.
@@ -3024,142 +3400,6 @@ export interface components {
              */
             color_hex: string;
         };
-        /** StudyPlanCheckpoint */
-        StudyPlanCheckpoint: {
-            /** Id */
-            id: string;
-            /** Milestone Id */
-            milestone_id: string;
-            /**
-             * Order
-             * @default 0
-             */
-            order: number;
-            /**
-             * Title
-             * @default
-             */
-            title: string;
-            /**
-             * Checkpoint Type
-             * @default self_test
-             */
-            checkpoint_type: string;
-            /**
-             * Estimated Minutes
-             * @default 0
-             */
-            estimated_minutes: number;
-        };
-        /** StudyPlanDetail */
-        StudyPlanDetail: {
-            /** Doc Id */
-            doc_id: string;
-            /**
-             * Title
-             * @default
-             */
-            title: string;
-            /**
-             * Description
-             * @default
-             */
-            description: string;
-            /**
-             * Total Estimated Minutes
-             * @default 0
-             */
-            total_estimated_minutes: number;
-            /**
-             * Total Lessons
-             * @default 0
-             */
-            total_lessons: number;
-            /**
-             * Lessons
-             * @default []
-             */
-            lessons: components["schemas"]["StudyPlanLesson"][];
-            /**
-             * Milestones
-             * @default []
-             */
-            milestones: components["schemas"]["StudyPlanMilestone"][];
-            /**
-             * Checkpoints
-             * @default []
-             */
-            checkpoints: components["schemas"]["StudyPlanCheckpoint"][];
-        };
-        /** StudyPlanLesson */
-        StudyPlanLesson: {
-            /** Id */
-            id: string;
-            /** Unit Id */
-            unit_id: string;
-            /**
-             * Order
-             * @default 0
-             */
-            order: number;
-            /**
-             * Title
-             * @default
-             */
-            title: string;
-            /**
-             * Description
-             * @default
-             */
-            description: string;
-            /**
-             * Lesson Type
-             * @default core
-             */
-            lesson_type: string;
-            /**
-             * Difficulty
-             * @default basic
-             */
-            difficulty: string;
-            /**
-             * Estimated Minutes
-             * @default 0
-             */
-            estimated_minutes: number;
-            /** Milestone Id */
-            milestone_id?: string | null;
-        };
-        /** StudyPlanMilestone */
-        StudyPlanMilestone: {
-            /** Id */
-            id: string;
-            /**
-             * Order
-             * @default 0
-             */
-            order: number;
-            /**
-             * Title
-             * @default
-             */
-            title: string;
-            /**
-             * Description
-             * @default
-             */
-            description: string;
-            /**
-             * Estimated Minutes
-             * @default 0
-             */
-            estimated_minutes: number;
-            /**
-             * Lesson Count
-             * @default 0
-             */
-            lesson_count: number;
-        };
         /**
          * StudyTimeCalculationStrategy
          * @description How estimated study time is calculated.
@@ -3212,6 +3452,41 @@ export interface components {
              */
             row_span: number;
         };
+        /** TableItem */
+        TableItem: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "table";
+            /** Id */
+            id: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /** Caption */
+            caption?: string | null;
+            /**
+             * Headers
+             * @default []
+             */
+            headers: string[];
+            /**
+             * Rows
+             * @default []
+             */
+            rows: string[][];
+            /** Bbox */
+            bbox?: {
+                [key: string]: unknown;
+            } | null;
+            /** Style */
+            style?: {
+                [key: string]: unknown;
+            } | null;
+        };
         /**
          * TableNode
          * @description A data table.
@@ -3242,6 +3517,39 @@ export interface components {
              * @default false
              */
             is_header: boolean;
+        };
+        /** TextItem */
+        TextItem: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "text";
+            /** Id */
+            id: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+            /**
+             * Level
+             * @default 0
+             */
+            level: number;
+            /** Bbox */
+            bbox?: {
+                [key: string]: unknown;
+            } | null;
+            /** Style */
+            style?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** TokenPayload */
         TokenPayload: {
@@ -3481,17 +3789,11 @@ export interface components {
             /** User Id */
             user_id: number;
             /** Lessons */
-            lessons: {
-                [key: string]: unknown;
-            }[];
+            lessons: components["schemas"]["UserLessonProgressResponse"][];
             /** Practices */
-            practices: {
-                [key: string]: unknown;
-            }[];
+            practices: components["schemas"]["UserPracticeProgressResponse"][];
             /** Quizzes */
-            quizzes: {
-                [key: string]: unknown;
-            }[];
+            quizzes: components["schemas"]["UserQuizProgressResponse"][];
         };
         /**
          * UserQuizProgressResponse
@@ -3977,9 +4279,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    }[];
+                    "application/json": components["schemas"]["Document"][];
                 };
             };
             /** @description Validation Error */
@@ -4014,9 +4314,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DocumentUploadResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4076,7 +4374,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["DocumentProcessResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4107,7 +4405,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["DocumentTreeResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4138,7 +4436,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["DocumentUnitsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4169,7 +4467,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["DocumentConceptsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4200,7 +4498,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["DocumentStudyPlanSummary"];
                 };
             };
             /** @description Validation Error */
@@ -4231,7 +4529,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["DocumentExportResponse"];
                 };
             };
             /** @description Validation Error */

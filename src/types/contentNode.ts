@@ -1,25 +1,60 @@
-/**
- * contentNode.ts — Content item types for lesson body rendering.
- *
- * Re-exports the backend ContentItem discriminated union from the generated
- * v1.d.ts so the rest of the codebase has a single stable import point.
- *
- * Backend schema: Course → Chapter → Lesson → Page → ContentItem
- * Each item carries a `type` discriminator matching the backend literals:
- *   "text" | "heading" | "image" | "table" | "equation" | "code" | "list"
- */
+export interface TextItem {
+  type: "text";
+  id: string;
+  order: number;
+  content: string;
+  level: number;
+}
 
-import type { components } from "../api/v1.d.ts";
+export interface HeadingItem {
+  type: "heading";
+  id: string;
+  order: number;
+  content: string;
+  level: number;
+}
 
-export type TextItem     = components["schemas"]["TextItem"];
-export type HeadingItem  = components["schemas"]["HeadingItem"];
-export type ImageItem    = components["schemas"]["ImageItem"];
-export type TableItem    = components["schemas"]["TableItem"];
-export type EquationItem = components["schemas"]["EquationItem"];
-export type CodeItem     = components["schemas"]["CodeItem"];
-export type ListItem     = components["schemas"]["ListItem"];
+export interface EquationItem {
+  type: "equation";
+  id: string;
+  order: number;
+  latex: string;
+  label?: string | null;
+}
 
-/** Discriminated union of all renderable content item types. */
+export interface CodeItem {
+  type: "code";
+  id: string;
+  order: number;
+  content: string;
+  language?: string | null;
+}
+
+export interface ImageItem {
+  type: "image";
+  id: string;
+  order: number;
+  data: string;
+  caption?: string | null;
+}
+
+export interface TableItem {
+  type: "table";
+  id: string;
+  order: number;
+  caption?: string | null;
+  headers: string[];
+  rows: string[][];
+}
+
+export interface ListItem {
+  type: "list";
+  id: string;
+  order: number;
+  ordered: boolean;
+  items: string[];
+}
+
 export type ContentItem =
   | TextItem
   | HeadingItem
