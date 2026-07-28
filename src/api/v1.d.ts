@@ -4,40 +4,6 @@
  */
 
 export interface paths {
-    "/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Health */
-        get: operations["health_health_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/spec": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Openapi Spec */
-        get: operations["openapi_spec_api_spec_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/auth/google": {
         parameters: {
             query?: never;
@@ -106,6 +72,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Roles */
+        get: operations["get_roles_api_roles_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Permissions */
+        get: operations["get_permissions_api_permissions_get"];
+        put?: never;
+        /** Create Permission Endpoint */
+        post: operations["create_permission_endpoint_api_permissions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/roles/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Permission */
+        post: operations["add_permission_api_roles_permissions_post"];
+        /** Revoke Permission Endpoint */
+        delete: operations["revoke_permission_endpoint_api_roles_permissions_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Users Endpoint */
+        get: operations["list_users_endpoint_api_users_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/{user_id}/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Assign Role Endpoint */
+        put: operations["assign_role_endpoint_api_users__user_id__roles_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/courses": {
         parameters: {
             query?: never;
@@ -128,17 +181,14 @@ export interface paths {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                /** Course Id */
-                course_id: number;
-            };
+            path?: never;
             cookie?: never;
         };
         get?: never;
         put?: never;
         post?: never;
         /** Delete Course Endpoint */
-        delete: operations["delete_course_endpoint_api_courses_course_id_delete"];
+        delete: operations["delete_course_endpoint_api_courses__course_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -148,14 +198,22 @@ export interface paths {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                /** Course Id */
-                course_id: number;
-            };
+            path?: never;
             cookie?: never;
         };
-        /** Get Course Study Plan */
-        get: operations["get_course_study_plan_api_courses_course_id_study_plan_get"];
+        /**
+         * Get Course Study Plan
+         * @description Return the book-structured study plan for a course.
+         *
+         *     Reads the CanonicalBook produced by Pipeline 2 (BookPipeline) from the
+         *     learning_platform database.  The response is structured as:
+         *         Course → Chapter → Lesson → Page → ContentItem
+         *
+         *     Each Lesson in the response includes:
+         *       - lesson_id: master-it LessonModel.id (int) — use with progress/notes/flashcard APIs
+         *       - unit_id: master-it UnitModel.id (int) — use with unit-scoped notes/flashcard APIs
+         */
+        get: operations["get_course_study_plan_api_courses__course_id__study_plan_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -168,17 +226,23 @@ export interface paths {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                /** Course Id */
-                course_id: number;
-            };
+            path?: never;
             cookie?: never;
         };
-        /** List Course Documents */
-        get: operations["list_course_documents_api_courses_course_id_documents_get"];
+        /**
+         * List Course Documents
+         * @description List all documents associated with a course.
+         */
+        get: operations["list_course_documents_api_courses__course_id__documents_get"];
         put?: never;
-        /** Upload Course Document */
-        post: operations["upload_course_document_api_courses_course_id_documents_post"];
+        /**
+         * Upload Document
+         * @description Upload a document and associate it with a course.
+         *
+         *     Stores the file at ``uploads/{course_id}/{sanitized_filename}``.
+         *     Creates a DocumentModel record and a CourseDocumentModel link.
+         */
+        post: operations["upload_document_api_courses__course_id__documents_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -189,75 +253,23 @@ export interface paths {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                /** Document Id */
-                document_id: string;
-            };
+            path?: never;
             cookie?: never;
         };
         get?: never;
         put?: never;
         post?: never;
-        /** Delete Document */
-        delete: operations["delete_document_api_documents_document_id_delete"];
+        /**
+         * Delete Document Endpoint
+         * @description Delete a document record, its file, and its course associations.
+         */
+        delete: operations["delete_document_endpoint_api_documents__document_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/users": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Users */
-        get: operations["list_users_api_users_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/users/{user_id}/roles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: number;
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put: operations["assign_role_api_users_user_id_roles_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/roles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Roles */
-        get: operations["list_roles_api_roles_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/roles/permissions": {
+    "/api/documents/{document_id}/process": {
         parameters: {
             query?: never;
             header?: never;
@@ -266,27 +278,961 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Grant Permission To Role */
-        post: operations["grant_permission_to_role_api_roles_permissions_post"];
-        /** Revoke Permission From Role */
-        delete: operations["revoke_permission_from_role_api_roles_permissions_delete"];
+        /**
+         * Process Document
+         * @description Trigger LP pipeline processing for an uploaded document.
+         *
+         *     Resolves the storage path from the DocumentModel and calls the LP
+         *     service directly — no HTTP round-trip, no duplicate app instance.
+         *     The pipeline result is stored in the shared ``pipeline_cache`` under
+         *     ``stable_doc_id(storage_path)`` so all subsequent reads hit the same key.
+         */
+        post: operations["process_document_api_documents__document_id__process_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/permissions": {
+    "/api/documents/{document_id}/tree": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List Permissions */
-        get: operations["list_permissions_api_permissions_get"];
+        /**
+         * Get Document Tree
+         * @description Return the canonical document tree for a processed document.
+         */
+        get: operations["get_document_tree_api_documents__document_id__tree_get"];
         put?: never;
-        /** Create Permission */
-        post: operations["create_permission_api_permissions_post"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/documents/{document_id}/units": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Document Units
+         * @description Return all learning units for a processed document.
+         */
+        get: operations["get_document_units_api_documents__document_id__units_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/documents/{document_id}/concepts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Document Concepts
+         * @description Return all concepts for a processed document.
+         */
+        get: operations["get_document_concepts_api_documents__document_id__concepts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/documents/{document_id}/study-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Document Study Plan
+         * @description Return the study plan summary for a processed document.
+         */
+        get: operations["get_document_study_plan_api_documents__document_id__study_plan_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/documents/{document_id}/export/json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Document Json
+         * @description Export all pipeline results as JSON for a processed document.
+         */
+        get: operations["export_document_json_api_documents__document_id__export_json_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/courses/{course_id}/units": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Units Endpoint */
+        get: operations["list_units_endpoint_api_courses__course_id__units_get"];
+        put?: never;
+        /** Create Unit Endpoint */
+        post: operations["create_unit_endpoint_api_courses__course_id__units_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/units/{unit_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Unit Endpoint */
+        get: operations["get_unit_endpoint_api_units__unit_id__get"];
+        /** Update Unit Endpoint */
+        put: operations["update_unit_endpoint_api_units__unit_id__put"];
+        post?: never;
+        /** Delete Unit Endpoint */
+        delete: operations["delete_unit_endpoint_api_units__unit_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/units/{unit_id}/sections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sections Endpoint */
+        get: operations["list_sections_endpoint_api_units__unit_id__sections_get"];
+        put?: never;
+        /** Create Section Endpoint */
+        post: operations["create_section_endpoint_api_units__unit_id__sections_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sections/{section_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Section Endpoint */
+        get: operations["get_section_endpoint_api_sections__section_id__get"];
+        /** Update Section Endpoint */
+        put: operations["update_section_endpoint_api_sections__section_id__put"];
+        post?: never;
+        /** Delete Section Endpoint */
+        delete: operations["delete_section_endpoint_api_sections__section_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sections/{section_id}/lessons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Lessons Endpoint */
+        get: operations["list_lessons_endpoint_api_sections__section_id__lessons_get"];
+        put?: never;
+        /** Create Lesson Endpoint */
+        post: operations["create_lesson_endpoint_api_sections__section_id__lessons_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/lessons/{lesson_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Lesson Endpoint */
+        get: operations["get_lesson_endpoint_api_lessons__lesson_id__get"];
+        /** Update Lesson Endpoint */
+        put: operations["update_lesson_endpoint_api_lessons__lesson_id__put"];
+        post?: never;
+        /** Delete Lesson Endpoint */
+        delete: operations["delete_lesson_endpoint_api_lessons__lesson_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sections/{section_id}/practices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Practices Endpoint */
+        get: operations["list_practices_endpoint_api_sections__section_id__practices_get"];
+        put?: never;
+        /** Create Practice Endpoint */
+        post: operations["create_practice_endpoint_api_sections__section_id__practices_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/practices/{practice_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Practice Endpoint */
+        get: operations["get_practice_endpoint_api_practices__practice_id__get"];
+        /** Update Practice Endpoint */
+        put: operations["update_practice_endpoint_api_practices__practice_id__put"];
+        post?: never;
+        /** Delete Practice Endpoint */
+        delete: operations["delete_practice_endpoint_api_practices__practice_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sections/{section_id}/quizzes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Quizzes Endpoint */
+        get: operations["list_quizzes_endpoint_api_sections__section_id__quizzes_get"];
+        put?: never;
+        /** Create Quiz Endpoint */
+        post: operations["create_quiz_endpoint_api_sections__section_id__quizzes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/quizzes/{quiz_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Quiz Endpoint */
+        get: operations["get_quiz_endpoint_api_quizzes__quiz_id__get"];
+        /** Update Quiz Endpoint */
+        put: operations["update_quiz_endpoint_api_quizzes__quiz_id__put"];
+        post?: never;
+        /** Delete Quiz Endpoint */
+        delete: operations["delete_quiz_endpoint_api_quizzes__quiz_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/{user_id}/lessons/{lesson_id}/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User Lesson Progress Endpoint */
+        get: operations["get_user_lesson_progress_endpoint_api_users__user_id__lessons__lesson_id__progress_get"];
+        /** Upsert User Lesson Progress Endpoint */
+        put: operations["upsert_user_lesson_progress_endpoint_api_users__user_id__lessons__lesson_id__progress_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/{user_id}/practices/{practice_id}/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User Practice Progress Endpoint */
+        get: operations["get_user_practice_progress_endpoint_api_users__user_id__practices__practice_id__progress_get"];
+        /** Upsert User Practice Progress Endpoint */
+        put: operations["upsert_user_practice_progress_endpoint_api_users__user_id__practices__practice_id__progress_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/{user_id}/quizzes/{quiz_id}/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User Quiz Progress Endpoint */
+        get: operations["get_user_quiz_progress_endpoint_api_users__user_id__quizzes__quiz_id__progress_get"];
+        /** Upsert User Quiz Progress Endpoint */
+        put: operations["upsert_user_quiz_progress_endpoint_api_users__user_id__quizzes__quiz_id__progress_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/documents/{doc_id}/mapping": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Mapping
+         * @description Get the current mapping for a document.
+         *
+         *     Returns the presentation model with the current configuration.
+         */
+        get: operations["get_mapping_api_documents__doc_id__mapping_get"];
+        /**
+         * Update Mapping
+         * @description Update the mapping configuration for a document.
+         *
+         *     This does NOT rerun the document pipeline. It only updates
+         *     the configuration and regenerates presentation objects.
+         */
+        put: operations["update_mapping_api_documents__doc_id__mapping_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/documents/{doc_id}/mapping/regenerate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Regenerate Mapping
+         * @description Regenerate the presentation for a document.
+         *
+         *     This does NOT rerun the document pipeline. It only regenerates
+         *     presentation objects using the current configuration.
+         */
+        post: operations["regenerate_mapping_api_documents__doc_id__mapping_regenerate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/documents/{doc_id}/mapping/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset Mapping
+         * @description Reset the mapping configuration to defaults.
+         *
+         *     This does NOT rerun the document pipeline. It only resets
+         *     the configuration and regenerates presentation objects.
+         */
+        post: operations["reset_mapping_api_documents__doc_id__mapping_reset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/documents/{doc_id}/mapping/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preview Mapping
+         * @description Preview the mapping for a document.
+         *
+         *     Returns a preview of the presentation model without modifying
+         *     any stored state.
+         */
+        get: operations["preview_mapping_api_documents__doc_id__mapping_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/courses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Courses V1 */
+        get: operations["list_courses_v1_api_v1_courses_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/courses/{course_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Course V1 */
+        get: operations["get_course_v1_api_v1_courses__course_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/units/{unit_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Unit V1 */
+        get: operations["get_unit_v1_api_v1_units__unit_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lessons/{lesson_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Lesson V1 */
+        get: operations["get_lesson_v1_api_v1_lessons__lesson_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/practices/{practice_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Practice V1 */
+        get: operations["get_practice_v1_api_v1_practices__practice_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/practices/{practice_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Practice V1 */
+        post: operations["submit_practice_v1_api_v1_practices__practice_id__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quizzes/{quiz_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Quiz V1 */
+        get: operations["get_quiz_v1_api_v1_quizzes__quiz_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quizzes/{quiz_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Quiz V1 */
+        post: operations["submit_quiz_v1_api_v1_quizzes__quiz_id__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User Progress V1 */
+        get: operations["get_user_progress_v1_api_v1_users_me_progress_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/lessons/{lesson_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Lesson Progress V1 */
+        patch: operations["update_lesson_progress_v1_api_v1_users_me_lessons__lesson_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/users/me/practices/{practice_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Practice Progress V1 */
+        patch: operations["update_practice_progress_v1_api_v1_users_me_practices__practice_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/users/me/quizzes/{quiz_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Quiz Progress V1 */
+        patch: operations["update_quiz_progress_v1_api_v1_users_me_quizzes__quiz_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/courses/{course_id}/units": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Units V1 */
+        get: operations["list_units_v1_api_v1_courses__course_id__units_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/me/courses/{course_id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Resume V1 */
+        get: operations["get_resume_v1_api_v1_users_me_courses__course_id__resume_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/courses/{course_id}/enroll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Enroll In Course V1
+         * @description Enroll the authenticated user in a course.
+         *
+         *     Idempotent — calling again returns status='already_enrolled' with no duplicate writes.
+         *     Pass source_document_id to generate course content from a study plan (Flow B).
+         */
+        post: operations["enroll_in_course_v1_api_v1_courses__course_id__enroll_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sections/{section_id}/unlock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unlock Section V1
+         * @description Manually unlock a section for a specific student.
+         *
+         *     Inserts a section_unlock_overrides record and batch-upserts all locked
+         *     items in the section to not_started.  No role guard for now — RBAC to
+         *     be added in a future iteration.
+         */
+        post: operations["unlock_section_v1_api_v1_sections__section_id__unlock_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Note */
+        post: operations["create_note_api_v1_notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notes/{note_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Note */
+        put: operations["update_note_api_v1_notes__note_id__put"];
+        post?: never;
+        /** Delete Note */
+        delete: operations["delete_note_api_v1_notes__note_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/units/{unit_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Unit Notes */
+        get: operations["get_unit_notes_api_v1_units__unit_id__notes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lessons/{lesson_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Lesson Notes */
+        get: operations["get_lesson_notes_api_v1_lessons__lesson_id__notes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/courses/{course_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Course Notes */
+        get: operations["get_course_notes_api_v1_courses__course_id__notes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/flashcards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Flashcard */
+        post: operations["create_flashcard_api_v1_flashcards_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/flashcards/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate Flashcards Endpoint */
+        post: operations["generate_flashcards_endpoint_api_v1_flashcards_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/flashcards/{card_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Flashcard */
+        put: operations["update_flashcard_api_v1_flashcards__card_id__put"];
+        post?: never;
+        /** Delete Flashcard */
+        delete: operations["delete_flashcard_api_v1_flashcards__card_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/units/{unit_id}/flashcards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Unit Flashcards */
+        get: operations["get_unit_flashcards_api_v1_units__unit_id__flashcards_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lessons/{lesson_id}/flashcards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Lesson Flashcards */
+        get: operations["get_lesson_flashcards_api_v1_lessons__lesson_id__flashcards_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/courses/{course_id}/flashcards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Course Flashcards */
+        get: operations["get_course_flashcards_api_v1_courses__course_id__flashcards_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Health */
+        get: operations["health_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spec": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Openapi Spec */
+        get: operations["openapi_spec_api_spec_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -297,10 +1243,1093 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AssignRole */
+        AssignRole: {
+            /** Role Name */
+            role_name: string;
+        };
+        /** Body_upload_document_api_courses__course_id__documents_post */
+        Body_upload_document_api_courses__course_id__documents_post: {
+            /** File */
+            file: string;
+        };
+        /**
+         * BoldRun
+         * @description Bold text span.
+         */
+        BoldRun: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            run_type: "bold";
+            /** Text */
+            text: string;
+        };
+        /**
+         * CalloutNode
+         * @description A highlighted callout block — example, non-example, or reminder.
+         */
+        CalloutNode: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "callout";
+            /**
+             * Variant
+             * @default example
+             * @enum {string}
+             */
+            variant: "example" | "non_example" | "reminder";
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /** Runs */
+            runs?: (components["schemas"]["PlainRun"] | components["schemas"]["EqRun"] | components["schemas"]["BoldRun"] | components["schemas"]["ItalicRun"] | components["schemas"]["CodeRun"] | components["schemas"]["LinkRun"])[];
+        };
+        /**
+         * CardStatus
+         * @description Status of a learning card as shown in the UI.
+         * @enum {string}
+         */
+        CardStatus: "not_started" | "in_progress" | "completed" | "mastered" | "locked" | "practiced" | "attempted";
+        /**
+         * Chapter
+         * @description A chapter within a course — contains ordered lessons.
+         */
+        Chapter: {
+            /** Id */
+            id: string;
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Lessons
+             * @default []
+             */
+            lessons: components["schemas"]["Lesson"][];
+            /** Unit Id */
+            unit_id?: number | null;
+        };
+        /**
+         * CodeBlockNode
+         * @description A verbatim code listing.
+         */
+        CodeBlockNode: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "code_block";
+            /**
+             * Language
+             * @default
+             */
+            language: string;
+            /** Code */
+            code: string;
+        };
+        /** CodeItem */
+        CodeItem: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "code";
+            /** Id */
+            id: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+            /** Language */
+            language?: string | null;
+            /** Bbox */
+            bbox?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * CodeRun
+         * @description Inline code span.
+         */
+        CodeRun: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            run_type: "code";
+            /** Text */
+            text: string;
+        };
+        /** Course */
+        Course: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Number Of Credits */
+            number_of_credits: number;
+            /** Difficulty */
+            difficulty: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "OPEN" | "CLOSED" | "COMING_SOON";
+            /** Owner Id */
+            owner_id: number;
+        };
+        /** CourseCreate */
+        CourseCreate: {
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Number Of Credits */
+            number_of_credits: number;
+            /** Difficulty */
+            difficulty: string;
+            /**
+             * Status
+             * @default COMING_SOON
+             * @enum {string}
+             */
+            status: "OPEN" | "CLOSED" | "COMING_SOON";
+        };
+        /**
+         * CourseStudyPlanResponse
+         * @description Response for GET /api/courses/{course_id}/study-plan.
+         */
+        CourseStudyPlanResponse: {
+            /** Course Id */
+            course_id: number;
+            /**
+             * Course Title
+             * @default
+             */
+            course_title: string;
+            /**
+             * Chapters
+             * @default []
+             */
+            chapters: components["schemas"]["Chapter"][];
+        };
+        /** CreatePermission */
+        CreatePermission: {
+            /** Name */
+            name: string;
+        };
+        /**
+         * DefinitionNode
+         * @description A term-definition pair.
+         */
+        DefinitionNode: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "definition";
+            /** Term */
+            term: string;
+            /** Definition */
+            definition: string;
+        };
+        /**
+         * DifficultyLevel
+         * @description Difficulty level for display purposes.
+         * @enum {string}
+         */
+        DifficultyLevel: "beginner" | "intermediate" | "advanced";
+        /** Document */
+        Document: {
+            /** Id */
+            id: string;
+            /** Filename */
+            filename: string;
+            /** Storage Path */
+            storage_path: string;
+            /** Content Type */
+            content_type: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Created At */
+            created_at: string;
+        };
+        /**
+         * DocumentConcept
+         * @description A single concept extracted from a document.
+         */
+        DocumentConcept: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Category */
+            category: string;
+            /** Importance */
+            importance: number;
+        };
+        /**
+         * DocumentConceptsResponse
+         * @description Response for GET /api/documents/{document_id}/concepts.
+         */
+        DocumentConceptsResponse: {
+            /** Doc Id */
+            doc_id: string;
+            /** Concepts */
+            concepts: components["schemas"]["DocumentConcept"][];
+            /** Total Concepts */
+            total_concepts: number;
+            /** Total Relationships */
+            total_relationships: number;
+        };
+        /**
+         * DocumentExportResponse
+         * @description Response for GET /api/documents/{document_id}/export/json.
+         */
+        DocumentExportResponse: {
+            /** Doc Id */
+            doc_id: string;
+            /** Export Dir */
+            export_dir: string;
+            /** Files */
+            files: string[];
+        };
+        /**
+         * DocumentProcessResponse
+         * @description Response for POST /api/documents/{document_id}/process.
+         */
+        DocumentProcessResponse: {
+            /** Doc Id */
+            doc_id: string;
+            /** Title */
+            title: string;
+            /** Units Count */
+            units_count: number;
+            /** Concepts Count */
+            concepts_count: number;
+            /** Graph Nodes */
+            graph_nodes: number;
+            /** Graph Edges */
+            graph_edges: number;
+            /** Lessons */
+            lessons: number;
+            /** Milestones */
+            milestones: number;
+        };
+        /**
+         * DocumentStudyPlanSummary
+         * @description Response for GET /api/documents/{document_id}/study-plan.
+         */
+        DocumentStudyPlanSummary: {
+            /** Doc Id */
+            doc_id: string;
+            /** Title */
+            title: string;
+            /** Total Lessons */
+            total_lessons: number;
+            /** Total Estimated Minutes */
+            total_estimated_minutes: number;
+            /** Milestones */
+            milestones: number;
+        };
+        /**
+         * DocumentTreeResponse
+         * @description Response for GET /api/documents/{document_id}/tree.
+         */
+        DocumentTreeResponse: {
+            /** Doc Id */
+            doc_id: string;
+            /** Title */
+            title: string;
+            /** Total Nodes */
+            total_nodes: number;
+        };
+        /**
+         * DocumentUnit
+         * @description A single learning unit within a document.
+         */
+        DocumentUnit: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Unit Type */
+            unit_type: string;
+            /** Difficulty */
+            difficulty: string;
+            /** Estimated Study Time Minutes */
+            estimated_study_time_minutes: number;
+        };
+        /**
+         * DocumentUnitsResponse
+         * @description Response for GET /api/documents/{document_id}/units.
+         */
+        DocumentUnitsResponse: {
+            /** Doc Id */
+            doc_id: string;
+            /** Units */
+            units: components["schemas"]["DocumentUnit"][];
+            /** Count */
+            count: number;
+        };
+        /**
+         * DocumentUploadResponse
+         * @description Response for POST /api/courses/{course_id}/documents.
+         */
+        DocumentUploadResponse: {
+            /** Id */
+            id: string;
+            /** Filename */
+            filename: string;
+            /** Storage Path */
+            storage_path: string;
+            /** Content Type */
+            content_type: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Created At */
+            created_at: string;
+        };
+        /**
+         * EnrollRequest
+         * @description Request body for course enrollment.
+         *
+         *     source_document_id: if provided, the learning content (units/sections/lessons)
+         *     will be generated from the corresponding study plan before progress is initialized.
+         *     Leave None when the course content already exists in the learning hierarchy.
+         */
+        EnrollRequest: {
+            /** Source Document Id */
+            source_document_id?: string | null;
+        };
+        /**
+         * EnrollResponse
+         * @description Response from a successful enrollment or idempotent re-enroll.
+         */
+        EnrollResponse: {
+            /** Course Id */
+            course_id: number;
+            /** User Id */
+            user_id: number;
+            /** Enrolled At */
+            enrolled_at: string;
+            /** Status */
+            status: string;
+            /**
+             * Lessons Initialized
+             * @default 0
+             */
+            lessons_initialized: number;
+            /**
+             * Practices Initialized
+             * @default 0
+             */
+            practices_initialized: number;
+            /**
+             * Quizzes Initialized
+             * @default 0
+             */
+            quizzes_initialized: number;
+        };
+        /**
+         * EqRun
+         * @description An inline LaTeX equation embedded in a paragraph.
+         */
+        EqRun: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            run_type: "eq";
+            /** Latex */
+            latex: string;
+        };
+        /** EquationItem */
+        EquationItem: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "equation";
+            /** Id */
+            id: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Latex
+             * @default
+             */
+            latex: string;
+            /** Label */
+            label?: string | null;
+            /** Bbox */
+            bbox?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * EquationNode
+         * @description A block (display) LaTeX equation.
+         *
+         *     For inline equations within paragraph text, use EqRun inside ParagraphNode.
+         */
+        EquationNode: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "equation";
+            /** Latex */
+            latex: string;
+            /**
+             * Label
+             * @default
+             */
+            label: string;
+        };
+        /**
+         * ExerciseOptionSchema
+         * @description Schema for an exercise answer option.
+         */
+        ExerciseOptionSchema: {
+            /**
+             * Label
+             * @default
+             */
+            label: string;
+            /**
+             * Text
+             * @default
+             */
+            text: string;
+            /**
+             * Is Correct
+             * @default false
+             */
+            is_correct: boolean;
+            /**
+             * Explanation
+             * @default
+             */
+            explanation: string;
+        };
+        /**
+         * FigureNode
+         * @description An image or diagram.
+         */
+        FigureNode: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "figure";
+            /**
+             * Image Url
+             * @default
+             */
+            image_url: string;
+            /**
+             * Alt Text
+             * @default
+             */
+            alt_text: string;
+            /**
+             * Caption
+             * @default
+             */
+            caption: string;
+        };
+        /**
+         * FlashcardCreate
+         * @description Create a flashcard with user or course scope.
+         *
+         *     Exactly one of course_id, unit_id, lesson_id must be set.
+         *     scope='course' requires course_id; scope='user' requires unit_id or lesson_id.
+         */
+        FlashcardCreate: {
+            /** Front */
+            front: string;
+            /** Back */
+            back: string;
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "user" | "course";
+            /** Course Id */
+            course_id?: number | null;
+            /** Unit Id */
+            unit_id?: number | null;
+            /** Lesson Id */
+            lesson_id?: number | null;
+        };
+        /**
+         * FlashcardGenerateRequest
+         * @description Request AI generation of flashcards for a unit or lesson.
+         *
+         *     force=True replaces any existing generated flashcards for the same target+scope.
+         *     force=False (default) returns 409 if generated flashcards already exist.
+         */
+        FlashcardGenerateRequest: {
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "unit" | "lesson";
+            /** Target Id */
+            target_id: number;
+            /**
+             * Card Scope
+             * @enum {string}
+             */
+            card_scope: "user" | "course";
+            /**
+             * Force
+             * @default false
+             */
+            force: boolean;
+        };
+        /** FlashcardResponse */
+        FlashcardResponse: {
+            /** Id */
+            id: number;
+            /** Front */
+            front: string;
+            /** Back */
+            back: string;
+            /** User Id */
+            user_id?: number | null;
+            /** Created By */
+            created_by: number;
+            /** Course Id */
+            course_id?: number | null;
+            /** Unit Id */
+            unit_id?: number | null;
+            /** Lesson Id */
+            lesson_id?: number | null;
+            /** Is Generated */
+            is_generated: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /**
+         * FlashcardUpdate
+         * @description Update front and/or back of a flashcard. At least one field required.
+         */
+        FlashcardUpdate: {
+            /** Front */
+            front?: string | null;
+            /** Back */
+            back?: string | null;
+        };
+        /**
+         * GoalCardPlacementStrategy
+         * @description Where goal cards (milestones/checkpoints) appear.
+         * @enum {string}
+         */
+        GoalCardPlacementStrategy: "between_sections" | "after_section" | "at_end" | "inline";
+        /**
+         * GoalConfigSchema
+         * @description Schema for goal card (milestone) placement configuration.
+         */
+        GoalConfigSchema: {
+            /** @default between_sections */
+            placement: components["schemas"]["GoalCardPlacementStrategy"];
+            /**
+             * Show Completed Count
+             * @default true
+             */
+            show_completed_count: boolean;
+            /**
+             * Show Estimated Time
+             * @default true
+             */
+            show_estimated_time: boolean;
+        };
+        /**
+         * GoalResponse
+         * @description A quiz/goal within a section — renamed from QuizWithProgress.
+         */
+        GoalResponse: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Score */
+            score?: number | null;
+            /** Completed At */
+            completed_at?: string | null;
+            /** @default not_started */
+            status: components["schemas"]["ProgressStatus"];
+            /**
+             * Activity Type
+             * @default quiz
+             */
+            activity_type: string;
+            /**
+             * Locked
+             * @default false
+             */
+            locked: boolean;
+            /**
+             * Action Label
+             * @default Start
+             */
+            action_label: string;
+        };
+        /** GrantPermission */
+        GrantPermission: {
+            /** Role Name */
+            role_name: string;
+            /** Permission Names */
+            permission_names: string[];
+        };
+        /** GrantPermissionResponse */
+        GrantPermissionResponse: {
+            /** Message */
+            message: string;
+            /** Permissions */
+            permissions: string[];
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HeadingItem */
+        HeadingItem: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "heading";
+            /** Id */
+            id: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+            /**
+             * Level
+             * @default 1
+             */
+            level: number;
+            /** Bbox */
+            bbox?: {
+                [key: string]: unknown;
+            } | null;
+            /** Style */
+            style?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * HeadingNode
+         * @description A section heading.
+         */
+        HeadingNode: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "heading";
+            /**
+             * Level
+             * @description 1=chapter, 2=section, 3=subsection, 4=sub-subsection
+             */
+            level: number;
+            /**
+             * Number
+             * @default
+             */
+            number: string;
+            /** Text */
+            text: string;
+        };
+        /** ImageItem */
+        ImageItem: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "image";
+            /** Id */
+            id: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Data
+             * @default
+             */
+            data: string;
+            /** Caption */
+            caption?: string | null;
+            /** Bbox */
+            bbox?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * ItalicRun
+         * @description Italic text span.
+         */
+        ItalicRun: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            run_type: "italic";
+            /** Text */
+            text: string;
+        };
+        /**
+         * LearningObjectiveSchema
+         * @description Schema for learning objective in API response.
+         */
+        LearningObjectiveSchema: {
+            /** Text */
+            text: string;
+            /** Annotation Id */
+            annotation_id?: string | null;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+        };
+        /**
+         * Lesson
+         * @description A lesson within a chapter — contains ordered pages.
+         */
+        Lesson: {
+            /** Id */
+            id: string;
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Pages
+             * @default []
+             */
+            pages: components["schemas"]["Page"][];
+            /** Lesson Id */
+            lesson_id?: number | null;
+            /** Unit Id */
+            unit_id?: number | null;
+        };
+        /**
+         * LessonCardSchema
+         * @description Schema for LessonCard in API response.
+         */
+        LessonCardSchema: {
+            /** Lesson Id */
+            lesson_id: string;
+            /** Unit Id */
+            unit_id: string;
+            /** Section Id */
+            section_id: string;
+            /** Title */
+            title: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Duration Minutes
+             * @default 0
+             */
+            duration_minutes: number;
+            /** @default beginner */
+            difficulty: components["schemas"]["DifficultyLevel"];
+            /** @default not_started */
+            status: components["schemas"]["CardStatus"];
+            /** Learning Objectives */
+            learning_objectives?: components["schemas"]["LearningObjectiveSchema"][];
+            /**
+             * Start Page
+             * @default 0
+             */
+            start_page: number;
+            /**
+             * End Page
+             * @default 0
+             */
+            end_page: number;
+            /** Completed At */
+            completed_at?: string | null;
+            /** Content References */
+            content_references?: components["schemas"]["NodeRefSchema"][];
+            /** Definitions */
+            definitions?: components["schemas"]["NodeRefSchema"][];
+            /** Examples */
+            examples?: components["schemas"]["NodeRefSchema"][];
+            /** Figures */
+            figures?: components["schemas"]["NodeRefSchema"][];
+            /** Tables */
+            tables?: components["schemas"]["NodeRefSchema"][];
+            /** Equations */
+            equations?: components["schemas"]["NodeRefSchema"][];
+            /** Content */
+            content?: (components["schemas"]["HeadingNode"] | components["schemas"]["ParagraphNode"] | components["schemas"]["ListNode"] | components["schemas"]["EquationNode"] | components["schemas"]["CodeBlockNode"] | components["schemas"]["TableNode"] | components["schemas"]["NoteNode"] | components["schemas"]["CalloutNode"] | components["schemas"]["DefinitionNode"] | components["schemas"]["FigureNode"])[];
+        };
+        /**
+         * LessonConfigSchema
+         * @description Schema for lesson grouping and ordering configuration.
+         */
+        LessonConfigSchema: {
+            /** @default by_order */
+            grouping: components["schemas"]["LessonGroupingStrategy"];
+            /** @default by_study_plan */
+            ordering: components["schemas"]["OrderingStrategy"];
+            /**
+             * Show Learning Objectives
+             * @default true
+             */
+            show_learning_objectives: boolean;
+            /**
+             * Show Difficulty
+             * @default true
+             */
+            show_difficulty: boolean;
+            /**
+             * Show Estimated Time
+             * @default true
+             */
+            show_estimated_time: boolean;
+        };
+        /** LessonCreate */
+        LessonCreate: {
+            /** Title */
+            title: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Duration Minutes
+             * @default 0
+             */
+            duration_minutes: number;
+            /**
+             * Display Order
+             * @default 0
+             */
+            display_order: number;
+        };
+        /**
+         * LessonCrudResponse
+         * @description Response for lesson CRUD operations — used by learning router.
+         */
+        LessonCrudResponse: {
+            /** Id */
+            id: number;
+            /** Section Id */
+            section_id: number;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Duration Minutes */
+            duration_minutes: number;
+            /** Display Order */
+            display_order: number;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+        };
+        /**
+         * LessonGroupingStrategy
+         * @description How lessons are organized within sections.
+         * @enum {string}
+         */
+        LessonGroupingStrategy: "by_order" | "by_difficulty_asc" | "by_difficulty_desc" | "by_estimated_time" | "by_prerequisites";
+        /**
+         * LessonResponse
+         * @description A lesson within a section — clean response serializer.
+         */
+        LessonResponse: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Duration Minutes */
+            duration_minutes: number;
+            /**
+             * Duration Label
+             * @default
+             */
+            duration_label: string;
+            /** Order */
+            order: number;
+            /** @default not_started */
+            status: components["schemas"]["ProgressStatus"];
+            /** Completed At */
+            completed_at?: string | null;
+            /**
+             * Sidebar Status
+             * @default not_started
+             */
+            sidebar_status: string;
+            /**
+             * Content
+             * @default []
+             */
+            content: (components["schemas"]["HeadingNode"] | components["schemas"]["ParagraphNode"] | components["schemas"]["ListNode"] | components["schemas"]["EquationNode"] | components["schemas"]["CodeBlockNode"] | components["schemas"]["TableNode"] | components["schemas"]["NoteNode"] | components["schemas"]["CalloutNode"] | components["schemas"]["DefinitionNode"] | components["schemas"]["FigureNode"])[];
+            /**
+             * Has Notes
+             * @default false
+             */
+            has_notes: boolean;
+            /**
+             * Has Flashcards
+             * @default false
+             */
+            has_flashcards: boolean;
+        };
+        /** LessonUpdate */
+        LessonUpdate: {
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Duration Minutes */
+            duration_minutes?: number | null;
+            /** Display Order */
+            display_order?: number | null;
+        };
+        /**
+         * LinkRun
+         * @description Hyperlink span.
+         */
+        LinkRun: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            run_type: "link";
+            /** Text */
+            text: string;
+            /** Href */
+            href: string;
+        };
+        /** ListItem */
+        ListItem: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "list";
+            /** Id */
+            id: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Ordered
+             * @default false
+             */
+            ordered: boolean;
+            /**
+             * Items
+             * @default []
+             */
+            items: string[];
+            /** Bbox */
+            bbox?: {
+                [key: string]: unknown;
+            } | null;
+            /** Style */
+            style?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * ListItemNode
+         * @description A single item in a list — may itself contain inline runs.
+         */
+        ListItemNode: {
+            /** Runs */
+            runs?: (components["schemas"]["PlainRun"] | components["schemas"]["EqRun"] | components["schemas"]["BoldRun"] | components["schemas"]["ItalicRun"] | components["schemas"]["CodeRun"] | components["schemas"]["LinkRun"])[];
+        };
+        /**
+         * ListNode
+         * @description An ordered or unordered list.
+         */
+        ListNode: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "list";
+            /**
+             * Style
+             * @default bullet
+             * @enum {string}
+             */
+            style: "bullet" | "numbered" | "alpha" | "roman" | "checkbox";
+            /** Items */
+            items?: components["schemas"]["ListItemNode"][];
         };
         /** LocalLogin */
         LocalLogin: {
@@ -332,161 +2361,1460 @@ export interface components {
              */
             phone: string;
         };
-        /** TokenPayload */
-        TokenPayload: {
-            /** Id Token */
-            id_token: string;
+        /**
+         * MappingConfigurationSchema
+         * @description Schema for complete mapping configuration.
+         *
+         *     This is the request/response model for the mapping API endpoints.
+         *     It mirrors the MappingConfiguration dataclass but uses Pydantic models.
+         */
+        MappingConfigurationSchema: {
+            section?: components["schemas"]["SectionConfigSchema"];
+            lesson?: components["schemas"]["LessonConfigSchema"];
+            practice?: components["schemas"]["PracticeConfigSchema"];
+            quiz?: components["schemas"]["QuizConfigSchema"];
+            goal?: components["schemas"]["GoalConfigSchema"];
+            study_time?: components["schemas"]["StudyTimeConfigSchema"];
+            navigation?: components["schemas"]["NavigationConfigSchema"];
+            status_legend?: components["schemas"]["StatusLegendConfigSchema"];
+            /** @default by_study_plan */
+            ordering: components["schemas"]["OrderingStrategy"];
         };
-        /** CourseCreate */
-        CourseCreate: {
+        /**
+         * MappingResponse
+         * @description Response for GET /documents/{docId}/mapping.
+         */
+        MappingResponse: {
+            /** Doc Id */
+            doc_id: string;
+            configuration: components["schemas"]["MappingConfigurationSchema"];
+            unit: components["schemas"]["UnitCardSchema"];
+            /** Sections */
+            sections?: components["schemas"]["SectionSchema"][];
+            /** Lessons */
+            lessons?: components["schemas"]["LessonCardSchema"][];
+            /** Practices */
+            practices?: components["schemas"]["PracticeCardSchema"][];
+            /** Quizzes */
+            quizzes?: components["schemas"]["QuizCardSchema"][];
+            /** Milestones */
+            milestones?: components["schemas"]["MilestoneCardSchema"][];
+            /** Pages */
+            pages?: components["schemas"]["PageViewSchema"][];
+            progress?: components["schemas"]["ProgressSummarySchema"];
+            /** Navigation */
+            navigation?: components["schemas"]["NavigationNodeSchema"][];
+            /** Status Legend */
+            status_legend?: components["schemas"]["StatusLegendSchema"][];
+        };
+        /**
+         * MappingUpdateRequest
+         * @description Request body for PUT /documents/{docId}/mapping.
+         */
+        MappingUpdateRequest: {
+            configuration: components["schemas"]["MappingConfigurationSchema"];
+        };
+        /**
+         * MappingUpdateResponse
+         * @description Response for PUT /documents/{docId}/mapping.
+         */
+        MappingUpdateResponse: {
+            /** Doc Id */
+            doc_id: string;
+            configuration: components["schemas"]["MappingConfigurationSchema"];
+            /**
+             * Message
+             * @default Mapping updated successfully
+             */
+            message: string;
+        };
+        /** MessageResponse */
+        MessageResponse: {
+            /** Message */
+            message: string;
+        };
+        /**
+         * MilestoneCardSchema
+         * @description Schema for MilestoneCard in API response.
+         */
+        MilestoneCardSchema: {
+            /** Milestone Id */
+            milestone_id: string;
+            /** Unit Id */
+            unit_id: string;
             /** Title */
             title: string;
-            /** Description */
-            description: string;
-            /** Number Of Credits */
-            number_of_credits: number;
-            /** Difficulty */
-            difficulty: string;
             /**
-             * Status
-             * @default COMING_SOON
+             * Description
+             * @default
              */
-            status: "OPEN" | "CLOSED" | "COMING_SOON";
+            description: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Estimated Minutes
+             * @default 0
+             */
+            estimated_minutes: number;
+            /**
+             * Lesson Count
+             * @default 0
+             */
+            lesson_count: number;
+            /**
+             * Completed Lesson Count
+             * @default 0
+             */
+            completed_lesson_count: number;
+            /** @default not_started */
+            status: components["schemas"]["CardStatus"];
         };
-        /** Course */
-        Course: {
+        /**
+         * NavigationConfigSchema
+         * @description Schema for navigation hierarchy configuration.
+         */
+        NavigationConfigSchema: {
+            /**
+             * Include Root
+             * @default true
+             */
+            include_root: boolean;
+            /**
+             * Highlight Current
+             * @default true
+             */
+            highlight_current: boolean;
+            /**
+             * Show Status
+             * @default true
+             */
+            show_status: boolean;
+            /** Max Depth */
+            max_depth?: number | null;
+        };
+        /**
+         * NavigationNodeSchema
+         * @description Schema for NavigationNode in API response.
+         */
+        NavigationNodeSchema: {
+            /** Node Id */
+            node_id: string;
+            /** Node Type */
+            node_type: string;
+            /** Title */
+            title: string;
+            /** Parent Id */
+            parent_id?: string | null;
+            /** Children Ids */
+            children_ids?: string[];
+            /** Unit Id */
+            unit_id?: string | null;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Is Current
+             * @default false
+             */
+            is_current: boolean;
+            /**
+             * Is Accessible
+             * @default true
+             */
+            is_accessible: boolean;
+            /** @default not_started */
+            status: components["schemas"]["CardStatus"];
+        };
+        /**
+         * NodeRefSchema
+         * @description Schema for a reference to a document node.
+         */
+        NodeRefSchema: {
+            /** Node Id */
+            node_id: string;
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+        };
+        /**
+         * NoteCreate
+         * @description Create a user note attached to exactly one unit or lesson.
+         */
+        NoteCreate: {
+            /** Content */
+            content: string;
+            /** Unit Id */
+            unit_id?: number | null;
+            /** Lesson Id */
+            lesson_id?: number | null;
+        };
+        /**
+         * NoteNode
+         * @description A margin note, tip, warning, or danger block.
+         */
+        NoteNode: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "note";
+            /**
+             * Variant
+             * @default info
+             * @enum {string}
+             */
+            variant: "info" | "tip" | "warning" | "danger";
+            /** Runs */
+            runs?: (components["schemas"]["PlainRun"] | components["schemas"]["EqRun"] | components["schemas"]["BoldRun"] | components["schemas"]["ItalicRun"] | components["schemas"]["CodeRun"] | components["schemas"]["LinkRun"])[];
+        };
+        /** NoteResponse */
+        NoteResponse: {
             /** Id */
             id: number;
+            /** Content */
+            content: string;
+            /** Unit Id */
+            unit_id?: number | null;
+            /** Lesson Id */
+            lesson_id?: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /** NoteUpdate */
+        NoteUpdate: {
+            /** Content */
+            content: string;
+        };
+        /**
+         * OrderingStrategy
+         * @description How items are ordered within their group.
+         * @enum {string}
+         */
+        OrderingStrategy: "by_study_plan" | "by_title_alpha" | "by_difficulty" | "by_estimated_time";
+        /**
+         * Page
+         * @description A page within a lesson — contains ordered content items.
+         */
+        Page: {
+            /** Id */
+            id: string;
+            /**
+             * Page Number
+             * @default 0
+             */
+            page_number: number;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Items
+             * @default []
+             */
+            items: (components["schemas"]["TextItem"] | components["schemas"]["HeadingItem"] | components["schemas"]["ImageItem"] | components["schemas"]["TableItem"] | components["schemas"]["EquationItem"] | components["schemas"]["CodeItem"] | components["schemas"]["ListItem"])[];
+        };
+        /**
+         * PageViewSchema
+         * @description Schema for PageView in API response.
+         */
+        PageViewSchema: {
+            /** Page Number */
+            page_number: number;
+            /**
+             * Title
+             * @default
+             */
+            title: string;
+            /**
+             * Text Preview
+             * @default
+             */
+            text_preview: string;
+            /**
+             * Full Text
+             * @default
+             */
+            full_text: string;
+            /** Unit Ids */
+            unit_ids?: string[];
+            /** Annotation Ids */
+            annotation_ids?: string[];
+            /** Concept Ids */
+            concept_ids?: string[];
+        };
+        /**
+         * ParagraphNode
+         * @description A paragraph of inline content, possibly with mixed styling and inline math.
+         */
+        ParagraphNode: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "paragraph";
+            /** Runs */
+            runs?: (components["schemas"]["PlainRun"] | components["schemas"]["EqRun"] | components["schemas"]["BoldRun"] | components["schemas"]["ItalicRun"] | components["schemas"]["CodeRun"] | components["schemas"]["LinkRun"])[];
+        };
+        /** Permission */
+        Permission: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+        };
+        /**
+         * PlainRun
+         * @description A plain text span within a paragraph.
+         */
+        PlainRun: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            run_type: "text";
+            /** Text */
+            text: string;
+        };
+        /**
+         * PracticeCardSchema
+         * @description Schema for PracticeCard in API response.
+         */
+        PracticeCardSchema: {
+            /** Practice Id */
+            practice_id: string;
+            /** Unit Id */
+            unit_id: string;
+            /** Section Id */
+            section_id: string;
             /** Title */
             title: string;
-            /** Description */
-            description: string;
-            /** Number Of Credits */
-            number_of_credits: number;
-            /** Difficulty */
-            difficulty: string;
             /**
-             * Status
-             * @default COMING_SOON
+             * Order
+             * @default 0
              */
-            status: "OPEN" | "CLOSED" | "COMING_SOON";
-            /** Owner Id */
-            owner_id: number;
+            order: number;
+            /**
+             * Required Correct
+             * @default 0
+             */
+            required_correct: number;
+            /**
+             * Total Questions
+             * @default 0
+             */
+            total_questions: number;
+            /** @default not_started */
+            status: components["schemas"]["CardStatus"];
+            /**
+             * Attempts
+             * @default 0
+             */
+            attempts: number;
+            /**
+             * Best Score
+             * @default 0
+             */
+            best_score: number;
+            /**
+             * Question Text
+             * @default
+             */
+            question_text: string;
+            /**
+             * Exercise Type
+             * @default
+             */
+            exercise_type: string;
+            /** Options */
+            options?: components["schemas"]["ExerciseOptionSchema"][];
+            /**
+             * Solution
+             * @default
+             */
+            solution: string;
+            /**
+             * Explanation
+             * @default
+             */
+            explanation: string;
+        };
+        /**
+         * PracticeConfigSchema
+         * @description Schema for practice activity grouping configuration.
+         */
+        PracticeConfigSchema: {
+            /** @default by_section */
+            grouping: components["schemas"]["PracticeGroupingStrategy"];
+            /** @default by_study_plan */
+            ordering: components["schemas"]["OrderingStrategy"];
+            /**
+             * Default Required Correct
+             * @default 1
+             */
+            default_required_correct: number;
+            /**
+             * Default Total Questions
+             * @default 1
+             */
+            default_total_questions: number;
+        };
+        /** PracticeCreate */
+        PracticeCreate: {
+            /** Title */
+            title: string;
+            /**
+             * Required Correct
+             * @default 0
+             */
+            required_correct: number;
+            /**
+             * Total Questions
+             * @default 0
+             */
+            total_questions: number;
+            /**
+             * Display Order
+             * @default 0
+             */
+            display_order: number;
+        };
+        /**
+         * PracticeCrudResponse
+         * @description Response for practice CRUD operations — used by learning router.
+         */
+        PracticeCrudResponse: {
+            /** Id */
+            id: number;
+            /** Section Id */
+            section_id: number;
+            /** Title */
+            title: string;
+            /** Required Correct */
+            required_correct: number;
+            /** Total Questions */
+            total_questions: number;
+            /** Display Order */
+            display_order: number;
             /** Created At */
             created_at: string;
             /** Updated At */
             updated_at: string;
         };
-        /** Document */
-        Document: {
+        /**
+         * PracticeGroupingStrategy
+         * @description How practice activities are organized.
+         * @enum {string}
+         */
+        PracticeGroupingStrategy: "by_section" | "by_lesson" | "flat";
+        /**
+         * PracticeResponse
+         * @description A practice activity within a section — clean response serializer.
+         */
+        PracticeResponse: {
             /** Id */
-            id: string;
-            /** Filename */
-            filename: string;
-            /** Storage Path */
-            storage_path: string;
-            /** Content Type */
-            content_type: string;
-            /** Size Bytes */
-            size_bytes: number;
+            id: number;
+            /** Title */
+            title: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Required Correct */
+            required_correct: number;
+            /** Total Questions */
+            total_questions: number;
+            /** Order */
+            order: number;
+            /** @default not_started */
+            status: components["schemas"]["ProgressStatus"];
+            /**
+             * Attempts
+             * @default 0
+             */
+            attempts: number;
+            /**
+             * Best Score
+             * @default 0
+             */
+            best_score: number;
+            /**
+             * Activity Type
+             * @default practice
+             */
+            activity_type: string;
+            /**
+             * Locked
+             * @default false
+             */
+            locked: boolean;
+            /**
+             * Progress Label
+             * @default
+             */
+            progress_label: string;
+            /**
+             * Action Label
+             * @default Start
+             */
+            action_label: string;
+            /**
+             * Sidebar Status
+             * @default not_started
+             */
+            sidebar_status: string;
+        };
+        /** PracticeSubmitRequest */
+        PracticeSubmitRequest: {
+            /**
+             * Answers
+             * @default []
+             */
+            answers: number[];
+            /**
+             * Score
+             * @default 0
+             */
+            score: number;
+        };
+        /** PracticeSubmitResponse */
+        PracticeSubmitResponse: {
+            /** Practice Id */
+            practice_id: number;
+            /** Score */
+            score: number;
+            /** Passed */
+            passed: boolean;
+            /** Attempts */
+            attempts: number;
+            /** Best Score */
+            best_score: number;
+            /** Status */
+            status: string;
+        };
+        /** PracticeUpdate */
+        PracticeUpdate: {
+            /** Title */
+            title?: string | null;
+            /** Required Correct */
+            required_correct?: number | null;
+            /** Total Questions */
+            total_questions?: number | null;
+            /** Display Order */
+            display_order?: number | null;
+        };
+        /**
+         * ProgressResponse
+         * @description Aggregated progress for the unit.
+         */
+        ProgressResponse: {
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Completed
+             * @default 0
+             */
+            completed: number;
+            /**
+             * Mastered Pct
+             * @default 0
+             */
+            mastered_pct: number;
+            /**
+             * Squares
+             * @default []
+             */
+            squares: components["schemas"]["ProgressSquareResponse"][];
+        };
+        /**
+         * ProgressSquareResponse
+         * @description A single square in the progress grid.
+         */
+        ProgressSquareResponse: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Section Id */
+            section_id: number;
+            /** Section Title */
+            section_title: string;
+            /** Order */
+            order: number;
+            status: components["schemas"]["ProgressStatus"];
+        };
+        /**
+         * ProgressStatus
+         * @enum {string}
+         */
+        ProgressStatus: "mastered" | "practiced" | "familiar" | "attempted" | "not_started" | "locked";
+        /**
+         * ProgressSummarySchema
+         * @description Schema for ProgressSummary in API response.
+         */
+        ProgressSummarySchema: {
+            /**
+             * Total Items
+             * @default 0
+             */
+            total_items: number;
+            /**
+             * Completed Items
+             * @default 0
+             */
+            completed_items: number;
+            /**
+             * Mastery Pct
+             * @default 0
+             */
+            mastery_pct: number;
+            /**
+             * Total Minutes Studied
+             * @default 0
+             */
+            total_minutes_studied: number;
+            /**
+             * Estimated Remaining Minutes
+             * @default 0
+             */
+            estimated_remaining_minutes: number;
+        };
+        /**
+         * QuizCardSchema
+         * @description Schema for QuizCard in API response.
+         */
+        QuizCardSchema: {
+            /** Quiz Id */
+            quiz_id: string;
+            /** Unit Id */
+            unit_id: string;
+            /** Section Id */
+            section_id: string;
+            /** Title */
+            title: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Total Points
+             * @default 0
+             */
+            total_points: number;
+            /**
+             * Passing Points
+             * @default 0
+             */
+            passing_points: number;
+            /** Time Limit Minutes */
+            time_limit_minutes?: number | null;
+            /** @default not_started */
+            status: components["schemas"]["CardStatus"];
+            /** Score */
+            score?: number | null;
+            /** Completed At */
+            completed_at?: string | null;
+        };
+        /**
+         * QuizConfigSchema
+         * @description Schema for quiz placement configuration.
+         */
+        QuizConfigSchema: {
+            /** @default at_section_end */
+            placement: components["schemas"]["QuizPlacementStrategy"];
+            /** @default by_study_plan */
+            ordering: components["schemas"]["OrderingStrategy"];
+            /**
+             * Show Time Limit
+             * @default true
+             */
+            show_time_limit: boolean;
+            /**
+             * Show Passing Score
+             * @default true
+             */
+            show_passing_score: boolean;
+        };
+        /** QuizCreate */
+        QuizCreate: {
+            /** Title */
+            title: string;
+        };
+        /**
+         * QuizCrudResponse
+         * @description Response for quiz CRUD operations — used by learning router.
+         */
+        QuizCrudResponse: {
+            /** Id */
+            id: number;
+            /** Section Id */
+            section_id: number;
+            /** Title */
+            title: string;
             /** Created At */
             created_at: string;
+            /** Updated At */
+            updated_at: string;
         };
-        /** UserProfile */
-        MeResponse: {
-            id: number;
-            email: string;
-            name: string;
-            picture_url: string;
-            phone: string;
-            auth_provider: string;
-            roles: components["schemas"]["Role"][];
+        /**
+         * QuizPlacementStrategy
+         * @description Where quizzes appear in the study experience.
+         * @enum {string}
+         */
+        QuizPlacementStrategy: "at_section_end" | "at_milestone_end" | "inline" | "separate_tab";
+        /** QuizSubmitRequest */
+        QuizSubmitRequest: {
+            /**
+             * Answers
+             * @default []
+             */
+            answers: number[];
+            /**
+             * Score
+             * @default 0
+             */
+            score: number;
+        };
+        /** QuizSubmitResponse */
+        QuizSubmitResponse: {
+            /** Quiz Id */
+            quiz_id: number;
+            /** Score */
+            score: number;
+            /** Passed */
+            passed: boolean;
+            /** Completed At */
+            completed_at: string;
+        };
+        /** QuizUpdate */
+        QuizUpdate: {
+            /** Title */
+            title?: string | null;
+        };
+        /**
+         * RegenerateResponse
+         * @description Response for POST /documents/{docId}/mapping/regenerate.
+         */
+        RegenerateResponse: {
+            /** Doc Id */
+            doc_id: string;
+            configuration: components["schemas"]["MappingConfigurationSchema"];
+            /**
+             * Message
+             * @default Presentation regenerated successfully
+             */
+            message: string;
+        };
+        /**
+         * ResetResponse
+         * @description Response for POST /documents/{docId}/mapping/reset.
+         */
+        ResetResponse: {
+            /** Doc Id */
+            doc_id: string;
+            configuration: components["schemas"]["MappingConfigurationSchema"];
+            /**
+             * Message
+             * @default Mapping reset to defaults
+             */
+            message: string;
+        };
+        /**
+         * ResumeResponse
+         * @description The lesson to resume for a given course — most recently accessed.
+         */
+        ResumeResponse: {
+            /** Lesson Id */
+            lesson_id?: number | null;
+            /** Unit Id */
+            unit_id?: number | null;
+        };
+        /** RevokePermission */
+        RevokePermission: {
+            /** Role Name */
+            role_name: string;
+            /** Permission Name */
+            permission_name: string;
         };
         /** Role */
         Role: {
+            /** Id */
             id: number;
+            /** Name */
             name: string;
+            /** Permissions */
             permissions: components["schemas"]["Permission"][];
         };
-        /** Permission */
-        Permission: {
+        /**
+         * SectionConfigSchema
+         * @description Schema for section grouping configuration.
+         */
+        SectionConfigSchema: {
+            /** @default by_module_level */
+            grouping: components["schemas"]["SectionGroupingStrategy"];
+            /**
+             * Title Template
+             * @default {unit_title}
+             */
+            title_template: string;
+            /**
+             * Show Empty Sections
+             * @default false
+             */
+            show_empty_sections: boolean;
+            /**
+             * Min Lessons Per Section
+             * @default 0
+             */
+            min_lessons_per_section: number;
+        };
+        /** SectionCreate */
+        SectionCreate: {
+            /** Title */
+            title: string;
+            /**
+             * Estimated Minutes
+             * @default 0
+             */
+            estimated_minutes: number;
+            /**
+             * Display Order
+             * @default 0
+             */
+            display_order: number;
+        };
+        /**
+         * SectionCrudResponse
+         * @description Response for section CRUD operations — used by learning router.
+         */
+        SectionCrudResponse: {
+            /** Id */
             id: number;
-            name: string;
+            /** Unit Id */
+            unit_id: number;
+            /** Title */
+            title: string;
+            /** Estimated Minutes */
+            estimated_minutes: number;
+            /** Display Order */
+            display_order: number;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
         };
-        /** UserSummary */
-        UserSummary: {
+        /**
+         * SectionDetailResponse
+         * @description Section with nested children — used by learning router.
+         */
+        SectionDetailResponse: {
+            /** Id */
             id: number;
-            email: string;
-            name: string;
-            picture_url: string;
-            phone: string;
-            roles: string[];
+            /** Unit Id */
+            unit_id: number;
+            /** Title */
+            title: string;
+            /** Estimated Minutes */
+            estimated_minutes: number;
+            /** Display Order */
+            display_order: number;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+            /**
+             * Lessons
+             * @default []
+             */
+            lessons: components["schemas"]["LessonCrudResponse"][];
+            /**
+             * Practices
+             * @default []
+             */
+            practices: components["schemas"]["PracticeCrudResponse"][];
+            /**
+             * Quizzes
+             * @default []
+             */
+            quizzes: components["schemas"]["QuizCrudResponse"][];
         };
-        /** AssignRoleRequest */
-        AssignRoleRequest: {
-            role_name: string;
+        /**
+         * SectionGroupingStrategy
+         * @description How units are grouped into sections.
+         * @enum {string}
+         */
+        SectionGroupingStrategy: "by_module_level" | "by_difficulty" | "by_topic" | "flat";
+        /**
+         * SectionResponse
+         * @description A section containing lessons, practices, and goals.
+         */
+        SectionResponse: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Estimated Minutes */
+            estimated_minutes: number;
+            /** Order */
+            order: number;
+            /**
+             * Lessons
+             * @default []
+             */
+            lessons: components["schemas"]["LessonResponse"][];
+            /**
+             * Practices
+             * @default []
+             */
+            practices: components["schemas"]["PracticeResponse"][];
+            /**
+             * Goals
+             * @default []
+             */
+            goals: components["schemas"]["GoalResponse"][];
         };
-        /** GrantPermissionRequest */
-        GrantPermissionRequest: {
-            role_name: string;
-            permission_names: string[];
-        };
-        /** RevokePermissionRequest */
-        RevokePermissionRequest: {
-            role_name: string;
-            permission_name: string;
-        };
-        /** StudyPlanLesson */
-        StudyPlanLesson: {
-            id: string;
+        /**
+         * SectionSchema
+         * @description Schema for Section in API response.
+         */
+        SectionSchema: {
+            /** Section Id */
+            section_id: string;
+            /** Unit Id */
             unit_id: string;
-            order: number;
+            /** Title */
             title: string;
-            description: string;
-            lesson_type: string;
-            difficulty: string;
-            estimated_minutes: number;
-            milestone_id: string | null;
-        };
-        /** StudyPlanMilestone */
-        StudyPlanMilestone: {
-            id: string;
+            /**
+             * Order
+             * @default 0
+             */
             order: number;
-            title: string;
-            description: string;
+            /**
+             * Estimated Minutes
+             * @default 0
+             */
             estimated_minutes: number;
+            /**
+             * Lesson Count
+             * @default 0
+             */
             lesson_count: number;
+            /**
+             * Practice Count
+             * @default 0
+             */
+            practice_count: number;
+            /**
+             * Quiz Count
+             * @default 0
+             */
+            quiz_count: number;
+            /**
+             * Completed Count
+             * @default 0
+             */
+            completed_count: number;
+            /**
+             * Start Page
+             * @default 0
+             */
+            start_page: number;
+            /**
+             * End Page
+             * @default 0
+             */
+            end_page: number;
         };
-        /** StudyPlanCheckpoint */
-        StudyPlanCheckpoint: {
+        /**
+         * SectionUnlockRequest
+         * @description Instructor request to manually unlock a section for a specific student.
+         */
+        SectionUnlockRequest: {
+            /** User Id */
+            user_id: number;
+        };
+        /** SectionUnlockResponse */
+        SectionUnlockResponse: {
+            /** Section Id */
+            section_id: number;
+            /** User Id */
+            user_id: number;
+            /** Items Unlocked */
+            items_unlocked: number;
+        };
+        /** SectionUpdate */
+        SectionUpdate: {
+            /** Title */
+            title?: string | null;
+            /** Estimated Minutes */
+            estimated_minutes?: number | null;
+            /** Display Order */
+            display_order?: number | null;
+        };
+        /**
+         * StatusLegendConfigSchema
+         * @description Schema for status legend configuration.
+         */
+        StatusLegendConfigSchema: {
+            /**
+             * Show Legend
+             * @default true
+             */
+            show_legend: boolean;
+        };
+        /**
+         * StatusLegendSchema
+         * @description Schema for StatusLegend in API response.
+         */
+        StatusLegendSchema: {
+            status: components["schemas"]["CardStatus"];
+            /** Label */
+            label: string;
+            /** Description */
+            description: string;
+            /**
+             * Icon Name
+             * @default
+             */
+            icon_name: string;
+            /**
+             * Color Hex
+             * @default
+             */
+            color_hex: string;
+        };
+        /**
+         * StudyTimeCalculationStrategy
+         * @description How estimated study time is calculated.
+         * @enum {string}
+         */
+        StudyTimeCalculationStrategy: "sum_children" | "weighted_average" | "fixed_per_lesson" | "custom";
+        /**
+         * StudyTimeConfigSchema
+         * @description Schema for study time calculation configuration.
+         */
+        StudyTimeConfigSchema: {
+            /** @default sum_children */
+            strategy: components["schemas"]["StudyTimeCalculationStrategy"];
+            /**
+             * Fixed Minutes Per Lesson
+             * @default 15
+             */
+            fixed_minutes_per_lesson: number;
+            /**
+             * Words Per Minute
+             * @default 200
+             */
+            words_per_minute: number;
+            /**
+             * Exercise Minutes Each
+             * @default 5
+             */
+            exercise_minutes_each: number;
+        };
+        /**
+         * TableCellNode
+         * @description A single cell in a content table.
+         */
+        TableCellNode: {
+            /**
+             * Header
+             * @default false
+             */
+            header: boolean;
+            /** Text */
+            text: string;
+            /**
+             * Col Span
+             * @default 1
+             */
+            col_span: number;
+            /**
+             * Row Span
+             * @default 1
+             */
+            row_span: number;
+        };
+        /** TableItem */
+        TableItem: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "table";
+            /** Id */
             id: string;
-            milestone_id: string;
+            /**
+             * Order
+             * @default 0
+             */
             order: number;
+            /** Caption */
+            caption?: string | null;
+            /**
+             * Headers
+             * @default []
+             */
+            headers: string[];
+            /**
+             * Rows
+             * @default []
+             */
+            rows: string[][];
+            /** Bbox */
+            bbox?: {
+                [key: string]: unknown;
+            } | null;
+            /** Style */
+            style?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * TableNode
+         * @description A data table.
+         */
+        TableNode: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "table";
+            /**
+             * Caption
+             * @default
+             */
+            caption: string;
+            /** Rows */
+            rows?: components["schemas"]["TableRowNode"][];
+        };
+        /**
+         * TableRowNode
+         * @description A row in a content table.
+         */
+        TableRowNode: {
+            /** Cells */
+            cells?: components["schemas"]["TableCellNode"][];
+            /**
+             * Is Header
+             * @default false
+             */
+            is_header: boolean;
+        };
+        /** TextItem */
+        TextItem: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "text";
+            /** Id */
+            id: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+            /**
+             * Level
+             * @default 0
+             */
+            level: number;
+            /** Bbox */
+            bbox?: {
+                [key: string]: unknown;
+            } | null;
+            /** Style */
+            style?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** TokenPayload */
+        TokenPayload: {
+            /** Id Token */
+            id_token: string;
+        };
+        /** TokenResponse */
+        TokenResponse: {
+            /** Access Token */
+            access_token: string;
+            /** Token Type */
+            token_type: string;
+        };
+        /**
+         * UnitCardSchema
+         * @description Schema for UnitCard in API response.
+         */
+        UnitCardSchema: {
+            /** Unit Id */
+            unit_id: string;
+            /** Title */
             title: string;
-            checkpoint_type: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** @default beginner */
+            difficulty: components["schemas"]["DifficultyLevel"];
+            /**
+             * Estimated Minutes
+             * @default 0
+             */
+            estimated_minutes: number;
+            /**
+             * Total Sections
+             * @default 0
+             */
+            total_sections: number;
+            /**
+             * Total Lessons
+             * @default 0
+             */
+            total_lessons: number;
+            /** Course Id */
+            course_id?: number | null;
+            /**
+             * Progress Pct
+             * @default 0
+             */
+            progress_pct: number;
+        };
+        /** UnitCreate */
+        UnitCreate: {
+            /** Title */
+            title: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Display Order
+             * @default 0
+             */
+            display_order: number;
+        };
+        /**
+         * UnitCrudResponse
+         * @description Response for unit CRUD operations — used by learning router.
+         */
+        UnitCrudResponse: {
+            /** Id */
+            id: number;
+            /** Course Id */
+            course_id: number;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Display Order */
+            display_order: number;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+        };
+        /**
+         * UnitResponse
+         * @description Top-level unit study page response — clean serializer for frontend.
+         */
+        UnitResponse: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Course Id */
+            course_id: number;
+            progress: components["schemas"]["ProgressResponse"];
+            /** About */
+            about: string;
+            /**
+             * Total Lessons
+             * @default 0
+             */
+            total_lessons: number;
+            /**
+             * Total Minutes
+             * @default 0
+             */
+            total_minutes: number;
+            /**
+             * Sections
+             * @default []
+             */
+            sections: components["schemas"]["SectionResponse"][];
+            /**
+             * Has Notes
+             * @default false
+             */
+            has_notes: boolean;
+            /**
+             * Has Flashcards
+             * @default false
+             */
+            has_flashcards: boolean;
+        };
+        /**
+         * UnitSummary
+         * @description Lightweight unit listing item for the study page navigation.
+         */
+        UnitSummary: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Display Order */
+            display_order: number;
+            /**
+             * Total Sections
+             * @default 0
+             */
+            total_sections: number;
+            /**
+             * Estimated Minutes
+             * @default 0
+             */
             estimated_minutes: number;
         };
-        /** StudyPlanDetail */
-        StudyPlanDetail: {
-            doc_id: string;
-            title: string;
-            description: string;
-            total_estimated_minutes: number;
-            total_lessons: number;
-            lessons: components["schemas"]["StudyPlanLesson"][];
-            milestones: components["schemas"]["StudyPlanMilestone"][];
-            checkpoints: components["schemas"]["StudyPlanCheckpoint"][];
+        /** UnitUpdate */
+        UnitUpdate: {
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Display Order */
+            display_order?: number | null;
         };
-        /** CourseStudyPlanResponse */
-        CourseStudyPlanResponse: {
-            course_id: number;
-            course_title: string;
-            documents_processed: number;
-            study_plans: components["schemas"]["StudyPlanDetail"][];
+        /**
+         * UserLessonProgressResponse
+         * @description Response for user lesson progress — used by learning router.
+         */
+        UserLessonProgressResponse: {
+            /** User Id */
+            user_id: number;
+            /** Lesson Id */
+            lesson_id: number;
+            /** Status */
+            status: string;
+            /** Completed At */
+            completed_at?: string | null;
         };
-        /** CreatePermissionRequest */
-        CreatePermissionRequest: {
+        /** UserLessonProgressUpdate */
+        UserLessonProgressUpdate: {
+            /** Status */
+            status: string;
+            /** Completed At */
+            completed_at?: string | null;
+        };
+        /**
+         * UserPracticeProgressResponse
+         * @description Response for user practice progress — used by learning router.
+         */
+        UserPracticeProgressResponse: {
+            /** User Id */
+            user_id: number;
+            /** Practice Id */
+            practice_id: number;
+            /** Attempts */
+            attempts: number;
+            /** Best Score */
+            best_score: number;
+            /** Status */
+            status: string;
+        };
+        /** UserPracticeProgressUpdate */
+        UserPracticeProgressUpdate: {
+            /**
+             * Attempts
+             * @default 0
+             */
+            attempts: number;
+            /**
+             * Best Score
+             * @default 0
+             */
+            best_score: number;
+            /**
+             * Status
+             * @default NOT_STARTED
+             */
+            status: string;
+        };
+        /** UserProfile */
+        UserProfile: {
+            /** Id */
+            id: number;
+            /** Email */
+            email: string;
+            /** Name */
             name: string;
+            /** Picture Url */
+            picture_url: string;
+            /** Phone */
+            phone: string;
+            /** Auth Provider */
+            auth_provider: string;
+            /** Roles */
+            roles: components["schemas"]["Role"][];
+        };
+        /** UserProgressResponse */
+        UserProgressResponse: {
+            /** User Id */
+            user_id: number;
+            /** Lessons */
+            lessons: components["schemas"]["UserLessonProgressResponse"][];
+            /** Practices */
+            practices: components["schemas"]["UserPracticeProgressResponse"][];
+            /** Quizzes */
+            quizzes: components["schemas"]["UserQuizProgressResponse"][];
+        };
+        /**
+         * UserQuizProgressResponse
+         * @description Response for user quiz progress — used by learning router.
+         */
+        UserQuizProgressResponse: {
+            /** User Id */
+            user_id: number;
+            /** Quiz Id */
+            quiz_id: number;
+            /** Score */
+            score?: number | null;
+            /** Completed At */
+            completed_at?: string | null;
+        };
+        /** UserQuizProgressUpdate */
+        UserQuizProgressUpdate: {
+            /** Score */
+            score?: number | null;
+            /** Completed At */
+            completed_at?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -510,46 +3838,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    health_health_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    openapi_spec_api_spec_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
     auth_google_api_auth_google_post: {
         parameters: {
             query?: never;
@@ -569,7 +3857,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["TokenResponse"];
                 };
             };
             /** @description Validation Error */
@@ -602,7 +3890,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["TokenResponse"];
                 };
             };
             /** @description Validation Error */
@@ -635,7 +3923,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["TokenResponse"];
                 };
             };
             /** @description Validation Error */
@@ -664,7 +3952,199 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MeResponse"];
+                    "application/json": components["schemas"]["UserProfile"];
+                };
+            };
+        };
+    };
+    get_roles_api_roles_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Role"][];
+                };
+            };
+        };
+    };
+    get_permissions_api_permissions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Permission"][];
+                };
+            };
+        };
+    };
+    create_permission_endpoint_api_permissions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePermission"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Permission"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_permission_api_roles_permissions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GrantPermission"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GrantPermissionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_permission_endpoint_api_roles_permissions_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RevokePermission"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_users_endpoint_api_users_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfile"][];
+                };
+            };
+        };
+    };
+    assign_role_endpoint_api_users__user_id__roles_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignRole"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -708,7 +4188,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["Course"];
                 };
             };
             /** @description Validation Error */
@@ -722,12 +4202,11 @@ export interface operations {
             };
         };
     };
-    delete_course_endpoint_api_courses_course_id_delete: {
+    delete_course_endpoint_api_courses__course_id__delete: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** Course Id */
                 course_id: number;
             };
             cookie?: never;
@@ -741,25 +4220,22 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Not Found */
-            404: {
+            /** @description Validation Error */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        detail?: string;
-                    };
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
     };
-    get_course_study_plan_api_courses_course_id_study_plan_get: {
+    get_course_study_plan_api_courses__course_id__study_plan_get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** Course Id */
                 course_id: number;
             };
             cookie?: never;
@@ -775,25 +4251,22 @@ export interface operations {
                     "application/json": components["schemas"]["CourseStudyPlanResponse"];
                 };
             };
-            /** @description Not Found */
-            404: {
+            /** @description Validation Error */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        detail?: string;
-                    };
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
     };
-    list_course_documents_api_courses_course_id_documents_get: {
+    list_course_documents_api_courses__course_id__documents_get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** Course Id */
                 course_id: number;
             };
             cookie?: never;
@@ -809,35 +4282,29 @@ export interface operations {
                     "application/json": components["schemas"]["Document"][];
                 };
             };
-            /** @description Not Found */
-            404: {
+            /** @description Validation Error */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        detail?: string;
-                    };
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
     };
-    upload_course_document_api_courses_course_id_documents_post: {
+    upload_document_api_courses__course_id__documents_post: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** Course Id */
                 course_id: number;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "multipart/form-data": {
-                    /** File */
-                    file: string;
-                };
+                "multipart/form-data": components["schemas"]["Body_upload_document_api_courses__course_id__documents_post"];
             };
         };
         responses: {
@@ -847,18 +4314,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Document"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        detail?: string;
-                    };
+                    "application/json": components["schemas"]["DocumentUploadResponse"];
                 };
             };
             /** @description Validation Error */
@@ -872,12 +4328,11 @@ export interface operations {
             };
         };
     };
-    delete_document_api_documents_document_id_delete: {
+    delete_document_endpoint_api_documents__document_id__delete: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** Document Id */
                 document_id: string;
             };
             cookie?: never;
@@ -891,24 +4346,24 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Not Found */
-            404: {
+            /** @description Validation Error */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        detail?: string;
-                    };
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
     };
-    list_users_api_users_get: {
+    process_document_api_documents__document_id__process_post: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                document_id: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -919,33 +4374,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserSummary"][];
-                };
-            };
-        };
-    };
-    assign_role_api_users_user_id_roles_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AssignRoleRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["DocumentProcessResponse"];
                 };
             };
             /** @description Validation Error */
@@ -959,11 +4388,13 @@ export interface operations {
             };
         };
     };
-    list_roles_api_roles_get: {
+    get_document_tree_api_documents__document_id__tree_get: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                document_id: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -974,21 +4405,187 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Role"][];
+                    "application/json": components["schemas"]["DocumentTreeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
     };
-    grant_permission_to_role_api_roles_permissions_post: {
+    get_document_units_api_documents__document_id__units_get: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentUnitsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_document_concepts_api_documents__document_id__concepts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentConceptsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_document_study_plan_api_documents__document_id__study_plan_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentStudyPlanSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_document_json_api_documents__document_id__export_json_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentExportResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_units_endpoint_api_courses__course_id__units_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitCrudResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_unit_endpoint_api_courses__course_id__units_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+            };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GrantPermissionRequest"];
+                "application/json": components["schemas"]["UnitCreate"];
             };
         };
         responses: {
@@ -998,7 +4595,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["UnitCrudResponse"];
                 };
             };
             /** @description Validation Error */
@@ -1012,18 +4609,82 @@ export interface operations {
             };
         };
     };
-    revoke_permission_from_role_api_roles_permissions_delete: {
+    get_unit_endpoint_api_units__unit_id__get: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                unit_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitCrudResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_unit_endpoint_api_units__unit_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unit_id: number;
+            };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RevokePermissionRequest"];
+                "application/json": components["schemas"]["UnitUpdate"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitCrudResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_unit_endpoint_api_units__unit_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unit_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             204: {
@@ -1043,7 +4704,1014 @@ export interface operations {
             };
         };
     };
-    list_permissions_api_permissions_get: {
+    list_sections_endpoint_api_units__unit_id__sections_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unit_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionCrudResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_section_endpoint_api_units__unit_id__sections_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unit_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionCrudResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_section_endpoint_api_sections__section_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                section_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_section_endpoint_api_sections__section_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                section_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionCrudResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_section_endpoint_api_sections__section_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                section_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_lessons_endpoint_api_sections__section_id__lessons_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                section_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonCrudResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_lesson_endpoint_api_sections__section_id__lessons_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                section_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LessonCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonCrudResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_lesson_endpoint_api_lessons__lesson_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonCrudResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_lesson_endpoint_api_lessons__lesson_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LessonUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonCrudResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_lesson_endpoint_api_lessons__lesson_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_practices_endpoint_api_sections__section_id__practices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                section_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeCrudResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_practice_endpoint_api_sections__section_id__practices_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                section_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PracticeCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeCrudResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_practice_endpoint_api_practices__practice_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                practice_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeCrudResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_practice_endpoint_api_practices__practice_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                practice_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PracticeUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeCrudResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_practice_endpoint_api_practices__practice_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                practice_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_quizzes_endpoint_api_sections__section_id__quizzes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                section_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuizCrudResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_quiz_endpoint_api_sections__section_id__quizzes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                section_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuizCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuizCrudResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_quiz_endpoint_api_quizzes__quiz_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quiz_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuizCrudResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_quiz_endpoint_api_quizzes__quiz_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quiz_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuizUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuizCrudResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_quiz_endpoint_api_quizzes__quiz_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quiz_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_lesson_progress_endpoint_api_users__user_id__lessons__lesson_id__progress_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+                lesson_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserLessonProgressResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upsert_user_lesson_progress_endpoint_api_users__user_id__lessons__lesson_id__progress_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+                lesson_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserLessonProgressUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserLessonProgressResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_practice_progress_endpoint_api_users__user_id__practices__practice_id__progress_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+                practice_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserPracticeProgressResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upsert_user_practice_progress_endpoint_api_users__user_id__practices__practice_id__progress_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+                practice_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserPracticeProgressUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserPracticeProgressResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_quiz_progress_endpoint_api_users__user_id__quizzes__quiz_id__progress_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+                quiz_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserQuizProgressResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upsert_user_quiz_progress_endpoint_api_users__user_id__quizzes__quiz_id__progress_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+                quiz_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserQuizProgressUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserQuizProgressResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_mapping_api_documents__doc_id__mapping_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                doc_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MappingResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_mapping_api_documents__doc_id__mapping_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                doc_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MappingUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MappingUpdateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    regenerate_mapping_api_documents__doc_id__mapping_regenerate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                doc_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegenerateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_mapping_api_documents__doc_id__mapping_reset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                doc_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResetResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_mapping_api_documents__doc_id__mapping_preview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                doc_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MappingResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_courses_v1_api_v1_courses_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1058,31 +5726,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Permission"][];
+                    "application/json": components["schemas"]["Course"][];
                 };
             };
         };
     };
-    create_permission_api_permissions_post: {
+    get_course_v1_api_v1_courses__course_id__get: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                course_id: number;
+            };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreatePermissionRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
-            201: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["Course"];
                 };
             };
             /** @description Validation Error */
@@ -1092,6 +5758,914 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_unit_v1_api_v1_units__unit_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unit_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_lesson_v1_api_v1_lessons__lesson_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LessonResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_practice_v1_api_v1_practices__practice_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                practice_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_practice_v1_api_v1_practices__practice_id__submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                practice_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PracticeSubmitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeSubmitResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_quiz_v1_api_v1_quizzes__quiz_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quiz_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_quiz_v1_api_v1_quizzes__quiz_id__submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quiz_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuizSubmitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuizSubmitResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_progress_v1_api_v1_users_me_progress_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProgressResponse"];
+                };
+            };
+        };
+    };
+    update_lesson_progress_v1_api_v1_users_me_lessons__lesson_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserLessonProgressUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserLessonProgressResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_practice_progress_v1_api_v1_users_me_practices__practice_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                practice_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserPracticeProgressUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserPracticeProgressResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_quiz_progress_v1_api_v1_users_me_quizzes__quiz_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                quiz_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserQuizProgressUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserQuizProgressResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_units_v1_api_v1_courses__course_id__units_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_resume_v1_api_v1_users_me_courses__course_id__resume_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResumeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    enroll_in_course_v1_api_v1_courses__course_id__enroll_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnrollRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unlock_section_v1_api_v1_sections__section_id__unlock_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                section_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectionUnlockRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectionUnlockResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_note_api_v1_notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_note_api_v1_notes__note_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_note_api_v1_notes__note_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_unit_notes_api_v1_units__unit_id__notes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unit_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_lesson_notes_api_v1_lessons__lesson_id__notes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_course_notes_api_v1_courses__course_id__notes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_flashcard_api_v1_flashcards_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlashcardCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlashcardResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_flashcards_endpoint_api_v1_flashcards_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlashcardGenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlashcardResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_flashcard_api_v1_flashcards__card_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlashcardUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlashcardResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_flashcard_api_v1_flashcards__card_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_unit_flashcards_api_v1_units__unit_id__flashcards_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                unit_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlashcardResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_lesson_flashcards_api_v1_lessons__lesson_id__flashcards_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lesson_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlashcardResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_course_flashcards_api_v1_courses__course_id__flashcards_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlashcardResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    health_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    openapi_spec_api_spec_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };

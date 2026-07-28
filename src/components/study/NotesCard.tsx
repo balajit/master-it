@@ -1,14 +1,11 @@
 import { useState } from "react";
 import Card from "./ui/Card";
-
-// TODO(notes-backend): GET /api/notes/{lessonId} — fetch saved notes on lesson load
-// TODO(notes-backend): POST /api/notes/{lessonId} — persist notes on textarea blur/change
-// TODO(notes-backend): Integrate with openapi-typescript generator once endpoint exists
-// TODO(notes-frontend): Replace in-memory notesMap in StudyPage with API calls once backend is ready
+import type { NoteStatus } from "../../hooks/useNotes";
 
 interface NotesCardProps {
-  value: string;
-  onChange: (text: string) => void;
+  value:     string;
+  onChange:  (text: string) => void;
+  status?:   NoteStatus;
   className?: string;
 }
 
@@ -69,7 +66,25 @@ const CLOSE_ICON = (
   </svg>
 );
 
-export default function NotesCard({ value, onChange, className = "" }: NotesCardProps) {
+// ── Save status indicator ─────────────────────────────────────────────────────
+
+function SaveStatus({ status }: { status: NoteStatus }) {
+  if (status === "idle") return null;
+
+  const config = {
+    saving: { text: "Saving…",    className: "text-amber-400" },
+    saved:  { text: "Saved",      className: "text-green-500" },
+    error:  { text: "Save failed", className: "text-red-500"  },
+  } as const;
+
+  const { text, className } = config[status];
+
+  return (
+    <span className={`text-[10px] ${className}`}>{text}</span>
+  );
+}
+
+export default function NotesCard({ value, onChange, status = "idle", className = "" }: NotesCardProps) {
   const [open, setOpen] = useState(false);
   const [maximized, setMaximized] = useState(false);
 
@@ -136,12 +151,14 @@ export default function NotesCard({ value, onChange, className = "" }: NotesCard
             placeholder="Jot down notes or work through calculations…"
             className={`w-full ${textareaHeight} resize-none rounded-lg border border-amber-200 bg-white/70 px-3 py-2.5 text-sm leading-relaxed text-gray-800 placeholder:text-amber-300 focus:border-amber-300 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-1 overflow-y-auto`}
           />
-          {value.length > 0 && (
-            <p className="mt-1.5 text-right text-[10px] text-amber-400">
-              {value.length} chars
-              {/* TODO(notes-frontend): show "Saved" / "Saving…" status once backend is wired */}
-            </p>
-          )}
+          <div className="mt-1.5 flex items-center justify-between">
+            <SaveStatus status={status} />
+            {value.length > 0 && (
+              <p className="text-right text-[10px] text-amber-400">
+                {value.length} chars
+              </p>
+            )}
+          </div>
         </div>
       </Card>
     </div>

@@ -13,6 +13,7 @@ import ContentCard from "../components/study/ContentCard";
 import LessonContent from "../components/study/LessonContent";
 import { getStudyService } from "../services/getStudyService";
 import type { StudyPageData } from "../services/study";
+import { useNotes } from "../hooks/useNotes";
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -102,10 +103,6 @@ export default function StudyPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  // TODO(notes-frontend): Replace notesMap with API calls once backend is ready
-  // TODO(notes-backend): GET /api/notes/{lessonId} on lesson select to populate saved notes
-  // TODO(notes-backend): POST /api/notes/{lessonId} on change/blur to persist notes
-  const [notesMap, setNotesMap] = useState<Record<string, string>>({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarSearch, setSidebarSearch] = useState("");
@@ -172,6 +169,10 @@ export default function StudyPage() {
 
   const content = selectedId ? (data.contentMap[selectedId] ?? null) : null;
 
+  // ── Notes integration ───────────────────────────────────────────────
+  const lessonDbId = selectedId != null ? (data.lessonDbIdMap[selectedId] ?? null) : null;
+  const notes = useNotes(lessonDbId);
+
   return (
     <div className="grid h-dvh grid-rows-[auto_1fr] bg-gray-50">
       {/* ── Top bar ── */}
@@ -217,7 +218,7 @@ export default function StudyPage() {
             <div className="min-w-0 flex-1">
               <h2 className="text-xs font-semibold text-gray-900">{data.courseTitle}</h2>
               <p className="mt-0.5 text-[11px] text-gray-400">
-                {data.lessonCount} lessons · {formatMinutes(data.totalMinutes)} total
+                {data.lessonCount} lessons{data.totalMinutes > 0 ? ` · ${formatMinutes(data.totalMinutes)} total` : ""}
               </p>
             </div>
             <button
@@ -298,7 +299,7 @@ export default function StudyPage() {
               onSelect={setSelectedId}
               meta={[
                 { label: "MOCK 50 mastery points", icon: STAR_ICON },
-                { label: data.totalMinutes > 0 ? formatMinutes(data.totalMinutes) : "MOCK ~30 min" },
+                ...(data.totalMinutes > 0 ? [{ label: formatMinutes(data.totalMinutes) }] : []),
                 { label: `${data.lessonCount} lessons` },
               ]}
             />
@@ -310,10 +311,9 @@ export default function StudyPage() {
             )}
 
             <NotesCard
-              value={notesMap[selectedId ?? ""] ?? ""}
-              onChange={(text) =>
-                setNotesMap((prev) => ({ ...prev, [selectedId ?? ""]: text }))
-              }
+              value={notes.value}
+              onChange={notes.onChange}
+              status={notes.status}
             />
 
             {content?.learning && (
@@ -332,7 +332,7 @@ export default function StudyPage() {
                         content={
                           l.content && l.content.length > 0 ? (
                             <ContentCard subtitle={l.duration}>
-                              <LessonContent nodes={l.content} />
+                              <LessonContent items={l.content} />
                             </ContentCard>
                           ) : undefined
                         }
@@ -353,7 +353,7 @@ export default function StudyPage() {
                         content={
                           p.content && p.content.length > 0 ? (
                             <ContentCard subtitle={p.duration}>
-                              <LessonContent nodes={p.content} />
+                              <LessonContent items={p.content} />
                             </ContentCard>
                           ) : undefined
                         }

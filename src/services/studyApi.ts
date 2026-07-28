@@ -2,16 +2,17 @@
  * studyApi.ts — Real API implementation of StudyService.
  *
  * Calls:
- *   GET /api/courses/{course_id}/study-plan  → CourseStudyPlanResponse (typed via v1.d.ts)
- *   GET /api/v1/users/me/courses/{course_id}/resume → ResumeResponse (inline type — TODO below)
+ *   GET /api/courses/{course_id}/study-plan  → CourseStudyPlanResponse
+ *   GET /api/v1/users/me/courses/{course_id}/resume → ResumeResponse
  *
- * TODO: After the backend implements Changes 10+11 from STUDY_SCREEN_API_CHANGES.md,
- * regenerate v1.d.ts with:
- *   npx openapi-typescript http://localhost:5000/api/spec --output src/api/v1.d.ts
- * Then replace the plain fetch call below with a typed client.GET() call.
+ * The study plan is structured as: Course → Chapter → Lesson → Page → ContentItem
+ * Chapters map to sidebar groups; lessons map to selectable sidebar items.
+ * Pages and their content items are rendered in the main panel.
  *
- * Fields with no current backend equivalent are filled with "MOCK ..." text so they
- * are visually distinguishable in the UI while the backend catches up.
+ * Each Lesson carries:
+ *   - id: UUID string from the book pipeline (used as sidebar item id)
+ *   - lesson_id: DB integer PK (LessonModel.id) — used for notes/progress APIs
+ *   - unit_id: DB integer PK (UnitModel.id) — available if needed
  */
 
 import client from "../api/client";
@@ -24,208 +25,137 @@ import type {
   StudyContent,
   ItemStatus,
   LessonItemDef,
-  PracticeCardDef,
 } from "./study";
 import type { components } from "../api/v1.d.ts";
 
-type StudyPlanLesson     = components["schemas"]["StudyPlanLesson"];
-type StudyPlanMilestone  = components["schemas"]["StudyPlanMilestone"];
-type StudyPlanCheckpoint = components["schemas"]["StudyPlanCheckpoint"];
-type StudyPlanDetail     = components["schemas"]["StudyPlanDetail"];
+type Chapter  = components["schemas"]["Chapter"];
+type Lesson   = components["schemas"]["Lesson"];
+type Page     = components["schemas"]["Page"];
 
-// ── Resume response type (inline until v1.d.ts is regenerated) ────────────────
+// ── Resume response type ──────────────────────────────────────────────────────
 
-/** @see STUDY_SCREEN_API_CHANGES.md Change 11 */
 interface ResumeResponse {
   lesson_id: number | null;
-  unit_id: number | null;
+  unit_id:   number | null;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/**
- * Map a StudyPlanLesson.lesson_type or checkpoint_type to a 3-state ItemStatus.
- * Until the backend exposes per-user progress on the study-plan endpoint,
- * we default everything to not_started.
- */
 function defaultItemStatus(): ItemStatus {
   return "not_started";
 }
 
-/** Map checkpoint_type to a display badge string. */
-function checkpointBadge(checkpointType: string): string {
-  const map: Record<string, string> = {
-    quiz:      "Quiz",
-    practice:  "Practice",
-    project:   "Project",
-    self_test: "Self Test",
-  };
-  return map[checkpointType] ?? checkpointType;
-}
-
 /**
- * Build a lookup of lesson id → milestone id from the study plan lessons array,
- * so we can group lessons under the correct milestone.
+ * Extract the first meaningful text from a lesson's pages to use as the
+ * info card body. Returns an empty string if no text content is found.
  */
-function buildLessonMilestoneMap(
-  lessons: StudyPlanLesson[],
-): Map<string, string | null> {
-  const map = new Map<string, string | null>();
-  for (const lesson of lessons) {
-    map.set(lesson.id, lesson.milestone_id);
-  }
-  return map;
-}
-
-/**
- * Build a lookup of milestone id → sorted lessons.
- */
-function buildMilestoneLessonsMap(
-  lessons: StudyPlanLesson[],
-): Map<string, StudyPlanLesson[]> {
-  const map = new Map<string, StudyPlanLesson[]>();
-  for (const lesson of lessons) {
-    if (lesson.milestone_id) {
-      const arr = map.get(lesson.milestone_id) ?? [];
-      arr.push(lesson);
-      map.set(lesson.milestone_id, arr);
+function extractInfoBody(pages: Page[]): string {
+  for (const page of pages) {
+    for (const item of page.items) {
+      if (item.type === "text" && item.content.trim().length > 0) {
+        return item.content.trim();
+      }
     }
   }
-  // Sort each milestone's lessons by order
-  for (const arr of map.values()) {
-    arr.sort((a, b) => a.order - b.order);
-  }
-  return map;
+  return "";
 }
 
 /**
- * Build a lookup of milestone id → sorted checkpoints.
+ * Convert a Lesson's pages into LessonItemDef rows — one per page.
+ * Each row carries the page's content items for inline rendering.
  */
-function buildMilestoneCheckpointsMap(
-  checkpoints: StudyPlanCheckpoint[],
-): Map<string, StudyPlanCheckpoint[]> {
-  const map = new Map<string, StudyPlanCheckpoint[]>();
-  for (const cp of checkpoints) {
-    const arr = map.get(cp.milestone_id) ?? [];
-    arr.push(cp);
-    map.set(cp.milestone_id, arr);
-  }
-  for (const arr of map.values()) {
-    arr.sort((a, b) => a.order - b.order);
-  }
-  return map;
+function pagesToLessonItems(pages: Page[]): LessonItemDef[] {
+  return [...pages]
+    .sort((a, b) => a.order - b.order)
+    .map((page) => ({
+      title: `Page ${page.page_number > 0 ? page.page_number : page.order + 1}`,
+      state:   "not_started" as const,
+      content: page.items,
+    }));
 }
 
 /**
- * Convert a single StudyPlanDetail (one uploaded document's plan) into sidebar
- * groups, progress items, and a content map.
+ * Transform a single Lesson into its sidebar item, progress item, and content
+ * map entry.
  */
-function transformPlanDetail(detail: StudyPlanDetail): {
-  groups: StudyGroup[];
-  progressItems: StudyProgressItem[];
-  contentMap: Record<string, StudyContent>;
-  totalMinutes: number;
-  lessonCount: number;
+function transformLesson(lesson: Lesson): {
+  sidebarItem:   StudyItem;
+  progressItem:  StudyProgressItem;
+  contentEntry:  [string, StudyContent];
+  dbIdEntry:     [string, number] | null;
 } {
-  const milestoneMap = buildMilestoneLessonsMap(detail.lessons);
-  const checkpointMap = buildMilestoneCheckpointsMap(detail.checkpoints);
+  const itemId = lesson.id;
+  const status = defaultItemStatus();
+  const infoBody = extractInfoBody(lesson.pages ?? []);
 
-  const groups: StudyGroup[] = [];
-  const progressItems: StudyProgressItem[] = [];
-  const contentMap: Record<string, StudyContent> = {};
+  const sidebarItem: StudyItem = {
+    id:     itemId,
+    label:  lesson.title || "Untitled Lesson",
+    status,
+  };
 
-  const sortedMilestones = [...detail.milestones].sort((a, b) => a.order - b.order);
+  const progressItem: StudyProgressItem = {
+    id:     itemId,
+    label:  lesson.title || "Untitled Lesson",
+    status: "not_started",
+  };
 
-  for (const milestone of sortedMilestones) {
-    const lessons    = milestoneMap.get(milestone.id) ?? [];
-    const checkpoints = checkpointMap.get(milestone.id) ?? [];
+  const lessonItems: LessonItemDef[] = pagesToLessonItems(lesson.pages ?? []);
 
-    const sidebarItems: StudyItem[] = [];
+  const content: StudyContent = {
+    info: {
+      title: lesson.title || "Untitled Lesson",
+      body:  infoBody || `No description available for "${lesson.title || "this lesson"}".`,
+    },
+    learning: lessonItems.length > 0
+      ? {
+          title:         lesson.title || "Lesson Content",
+          estimatedTime: "",
+          lessons:       lessonItems,
+          practices:     [],
+        }
+      : null,
+    goal:          null,
+    practiceCards: [],
+  };
 
-    // Lessons
-    for (const lesson of lessons) {
-      const itemId = lesson.id;
-      const status = defaultItemStatus();
+  const dbIdEntry: [string, number] | null =
+    lesson.lesson_id != null ? [itemId, lesson.lesson_id] : null;
 
-      sidebarItems.push({ id: itemId, label: lesson.title, status });
+  return { sidebarItem, progressItem, contentEntry: [itemId, content], dbIdEntry };
+}
 
-      // Progress cell
-      progressItems.push({ id: itemId, label: lesson.title, status: "not_started" });
+/**
+ * Transform a Chapter into a StudyGroup and accumulate all derived data.
+ */
+function transformChapter(chapter: Chapter): {
+  group:         StudyGroup;
+  progressItems: StudyProgressItem[];
+  contentMap:    Record<string, StudyContent>;
+  lessonDbIdMap: Record<string, number>;
+} {
+  const progressItems: StudyProgressItem[]       = [];
+  const contentMap:    Record<string, StudyContent> = {};
+  const lessonDbIdMap: Record<string, number>    = {};
 
-      // Content — info and learning populated from study plan fields.
-      // Goal and practiceCards have no backend source yet → MOCK text.
-      const lessonItems: LessonItemDef[] = [
-        {
-          title: lesson.title,
-          description: lesson.description || undefined,
-          state: "not_started",
-          duration: lesson.estimated_minutes > 0 ? `${lesson.estimated_minutes} min` : undefined,
-        },
-      ];
+  const sortedLessons = [...(chapter.lessons ?? [])].sort((a, b) => a.order - b.order);
 
-      contentMap[itemId] = {
-        info: {
-          title: lesson.title,
-          body: lesson.description
-            ? lesson.description
-            : `MOCK No description available for "${lesson.title}".`,
-        },
-        learning: {
-          title: lesson.title,
-          estimatedTime: lesson.estimated_minutes > 0
-            ? `~${lesson.estimated_minutes} min`
-            : "",
-          lessons: lessonItems,
-          practices: [], // MOCK — practice items not in study plan response
-        },
-        goal: {
-          title: "MOCK Keep going!",
-          description: `MOCK Complete "${lesson.title}" to unlock the next section.`,
-          actionLabel: "MOCK Continue",
-        },
-        practiceCards: [], // MOCK — no practice card data in study plan
-      };
-    }
-
-    // Checkpoints
-    for (const cp of checkpoints) {
-      const itemId = cp.id;
-      const badge  = checkpointBadge(cp.checkpoint_type);
-      const status = defaultItemStatus();
-
-      sidebarItems.push({ id: itemId, label: cp.title, status, meta: badge });
-
-      progressItems.push({ id: itemId, label: cp.title, status: "not_started" });
-
-      const practiceCard: PracticeCardDef = {
-        title: cp.title,
-        description: `MOCK ${badge} — complete this checkpoint to advance.`,
-        progressLabel: `MOCK Score required to pass`,
-        badge,
-        status: "not_started",
-        actionLabel: "MOCK Start",
-      };
-
-      contentMap[itemId] = {
-        info: {
-          title: `MOCK About this checkpoint`,
-          body: `MOCK This ${badge.toLowerCase()} covers the material from the milestone. Complete it to move forward.`,
-        },
-        learning: null,
-        goal: null,
-        practiceCards: [practiceCard],
-      };
-    }
-
-    groups.push({ title: milestone.title, items: sidebarItems });
-  }
+  const sidebarItems: StudyItem[] = sortedLessons.map((lesson) => {
+    const { sidebarItem, progressItem, contentEntry, dbIdEntry } = transformLesson(lesson);
+    progressItems.push(progressItem);
+    contentMap[contentEntry[0]] = contentEntry[1];
+    if (dbIdEntry) lessonDbIdMap[dbIdEntry[0]] = dbIdEntry[1];
+    return sidebarItem;
+  });
 
   return {
-    groups,
+    group: {
+      title: chapter.title || "Untitled Chapter",
+      items: sidebarItems,
+    },
     progressItems,
     contentMap,
-    totalMinutes: detail.total_estimated_minutes,
-    lessonCount: detail.total_lessons,
+    lessonDbIdMap,
   };
 }
 
@@ -235,7 +165,7 @@ export class ApiStudyService implements StudyService {
   async getStudyPage(courseId: string): Promise<StudyPageData> {
     const courseIdNum = Number(courseId);
 
-    // ── 1. Fetch study plan (typed via openapi-fetch) ─────────────────────────
+    // ── 1. Fetch study plan ───────────────────────────────────────────────────
     const { data: planData, error: planError } = await client.GET(
       "/api/courses/{course_id}/study-plan",
       { params: { path: { course_id: courseIdNum } } },
@@ -245,53 +175,60 @@ export class ApiStudyService implements StudyService {
       throw new Error(`Failed to load study plan: ${JSON.stringify(planError)}`);
     }
 
-    // ── 2. Fetch resume lesson (plain fetch — not yet in v1.d.ts) ─────────────
-    // TODO: replace with typed client.GET() after regenerating v1.d.ts
-    // following backend Changes 10+11 in STUDY_SCREEN_API_CHANGES.md.
+    // ── 2. Fetch resume lesson ────────────────────────────────────────────────
     let resumeLessonId: string | null = null;
     try {
       const token = localStorage.getItem("master_it_auth");
       const resumeRes = await fetch(
         `http://localhost:5000/api/v1/users/me/courses/${courseIdNum}/resume`,
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        },
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} },
       );
       if (resumeRes.ok) {
         const resumeJson = (await resumeRes.json()) as ResumeResponse;
         if (resumeJson.lesson_id != null) {
-          resumeLessonId = String(resumeJson.lesson_id);
+          // Resolve the UUID sidebar id by matching the DB integer lesson_id
+          // across all lessons in all chapters.
+          const targetDbId = resumeJson.lesson_id;
+          outer: for (const chapter of planData.chapters ?? []) {
+            for (const lesson of chapter.lessons ?? []) {
+              if (lesson.lesson_id === targetDbId) {
+                resumeLessonId = lesson.id;
+                break outer;
+              }
+            }
+          }
         }
       }
     } catch {
-      // Resume endpoint not yet implemented — silently fall back to first lesson.
+      // Resume endpoint unavailable — fall back to first lesson.
     }
 
-    // ── 3. Transform study plan into StudyPageData ────────────────────────────
-    // Use the first study plan detail (one per uploaded document). If a course
-    // has multiple documents, merge their groups and content maps.
-    const allGroups:        StudyGroup[]                    = [];
-    const allProgressItems: StudyProgressItem[]             = [];
-    const allContentMap:    Record<string, StudyContent>    = {};
-    let   totalMinutes = 0;
-    let   lessonCount  = 0;
+    // ── 3. Transform chapters into StudyPageData ───────────────────────────────
+    const allGroups:        StudyGroup[]                   = [];
+    const allProgressItems: StudyProgressItem[]            = [];
+    const allContentMap:    Record<string, StudyContent>   = {};
+    const allLessonDbIdMap: Record<string, number>         = {};
+    let   lessonCount = 0;
 
-    for (const detail of planData.study_plans) {
-      const transformed = transformPlanDetail(detail);
-      allGroups.push(...transformed.groups);
-      allProgressItems.push(...transformed.progressItems);
-      Object.assign(allContentMap, transformed.contentMap);
-      totalMinutes += transformed.totalMinutes;
-      lessonCount  += transformed.lessonCount;
+    const sortedChapters = [...(planData.chapters ?? [])].sort((a, b) => a.order - b.order);
+
+    for (const chapter of sortedChapters) {
+      const { group, progressItems, contentMap, lessonDbIdMap } = transformChapter(chapter);
+      allGroups.push(group);
+      allProgressItems.push(...progressItems);
+      Object.assign(allContentMap, contentMap);
+      Object.assign(allLessonDbIdMap, lessonDbIdMap);
+      lessonCount += group.items.length;
     }
 
     return {
-      courseTitle:   planData.course_title || "Course",
+      courseTitle:    planData.course_title || "Course",
       lessonCount,
-      totalMinutes,
-      groups:        allGroups,
-      progressItems: allProgressItems,
-      contentMap:    allContentMap,
+      totalMinutes:   0, // new study plan schema does not include time estimates
+      groups:         allGroups,
+      progressItems:  allProgressItems,
+      contentMap:     allContentMap,
+      lessonDbIdMap:  allLessonDbIdMap,
       resumeLessonId,
     };
   }

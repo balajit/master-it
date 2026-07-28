@@ -6,7 +6,7 @@
  */
 
 import type { LessonStatus } from "../components/study/statusConfig";
-import type { ContentNode } from "../types/contentNode";
+import type { ContentItem } from "../types/contentNode";
 
 // ── Sidebar ──────────────────────────────────────────────────────────────────
 
@@ -43,7 +43,7 @@ export interface LessonItemDef {
   state: "completed" | "in_progress" | "not_started";
   duration?: string;
   /** Ordered content nodes for this lesson — populated from backend lesson body when available. */
-  content?: ContentNode[];
+  content?: ContentItem[];
 }
 
 export interface PracticeCardDef {
@@ -75,7 +75,11 @@ export interface StudyPageData {
   courseTitle: string;
   /** Total lesson count for the sidebar header. */
   lessonCount: number;
-  /** Total estimated minutes for the sidebar header. */
+  /**
+   * Total estimated minutes for the sidebar header.
+   * Zero when the backend does not supply time estimates — sidebar hides the
+   * time display in that case.
+   */
   totalMinutes: number;
   /** Sidebar groups (one per milestone/section). */
   groups: StudyGroup[];
@@ -83,6 +87,12 @@ export interface StudyPageData {
   progressItems: StudyProgressItem[];
   /** Per-item content for the main panel. */
   contentMap: Record<string, StudyContent>;
+  /**
+   * Maps sidebar item UUID (lesson.id from the study plan) to the DB integer
+   * lesson ID (LessonModel.id). Used to scope notes and progress API calls.
+   * A lesson is absent from the map if lesson_id was null (not yet provisioned).
+   */
+  lessonDbIdMap: Record<string, number>;
   /**
    * The lesson id to open on page load (most recently accessed).
    * Null if the user has no progress — falls back to the first item in groups.
