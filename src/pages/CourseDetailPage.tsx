@@ -3,6 +3,11 @@ import { useParams, useNavigate, Link } from "react-router";
 import client from "../api/client";
 import type { components } from "../api/v1.d.ts";
 import Layout from "../components/Layout";
+import DocumentProcessingModal from "../components/DocumentProcessingModal";
+import useDocumentProcessing, {
+  isCompletedStatus,
+  isProcessingStatus,
+} from "../hooks/useDocumentProcessing";
 
 type Course = components["schemas"]["Course"];
 type Document = components["schemas"]["Document"];
@@ -87,17 +92,41 @@ export default function CourseDetailPage() {
 
   const [documents, setDocuments] = useState<Document[]>([]);
   const [docsLoading, setDocsLoading] = useState(true);
-  const [processingDocs, setProcessingDocs] = useState<string[]>([]);
-  const [processMsg, setProcessMsg] = useState<{
-    docId: string;
-    message: string;
-    type: "success" | "info" | "error";
-  } | null>(null);
+  const [processingDoc, setProcessingDoc] = useState<Document | null>(null);
+
+  const {
+    statusByDocId,
+    errorByDocId,
+    processDocument,
+    refreshDocument,
+    retryDocument,
+    reprocessDocument,
+    clearError,
+    isInFlight,
+  } = useDocumentProcessing();
 
   const [studyPlan, setStudyPlan] = useState<CourseStudyPlanResponse | null>(
     null,
   );
   const [planLoading, setPlanLoading] = useState(true);
+
+  async function fetchDocumentsForCourse(targetCourseId: number) {
+    setDocsLoading(true);
+    const { data } = await client.GET("/api/courses/{course_id}/documents", {
+      params: { path: { course_id: targetCourseId } },
+    });
+    if (data) setDocuments(data);
+    setDocsLoading(false);
+  }
+
+  async function fetchStudyPlanForCourse(targetCourseId: number) {
+    setPlanLoading(true);
+    const { data } = await client.GET("/api/courses/{course_id}/study-plan", {
+      params: { path: { course_id: targetCourseId } },
+    });
+    if (data) setStudyPlan(data);
+    setPlanLoading(false);
+  }
 
   useEffect(() => {
     if (!hasValidCourseId) return;
@@ -134,69 +163,56 @@ export default function CourseDetailPage() {
     const courseId = course.id;
 
     async function loadDocs() {
-      setDocsLoading(true);
-      const { data } = await client.GET(
-        "/api/courses/{course_id}/documents",
-        { params: { path: { course_id: courseId } } },
-      );
-      if (!cancelled && data) setDocuments(data);
-      setDocsLoading(false);
+      await fetchDocumentsForCourse(courseId);
+      if (cancelled) return;
     }
 
     async function loadPlan() {
-      setPlanLoading(true);
-      const { data } = await client.GET(
-        "/api/courses/{course_id}/study-plan",
-        { params: { path: { course_id: courseId } } },
-      );
-      if (!cancelled && data) setStudyPlan(data);
-      setPlanLoading(false);
+      await fetchStudyPlanForCourse(courseId);
+      if (cancelled) return;
     }
 
-    loadDocs();
-    loadPlan();
+    void loadDocs();
+    void loadPlan();
     return () => {
       cancelled = true;
     };
   }, [course]);
 
-  async function processDocument(docId: string) {
-    setProcessingDocs((prev) => [...prev, docId]);
-    setProcessMsg(null);
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30_000);
-
-    try {
-      const { error } = await client.POST(
-        "/api/documents/{document_id}/process",
-        {
-          params: { path: { document_id: docId } },
-          signal: controller.signal,
-        } as never,
-      );
-      clearTimeout(timeout);
-
-      if (error) {
-        setProcessMsg({ docId, message: "Failed to process document.", type: "error" });
-      } else {
-        setProcessMsg({ docId, message: "Document processed successfully.", type: "success" });
-      }
-    } catch (err: unknown) {
-      clearTimeout(timeout);
-      if (err instanceof DOMException && err.name === "AbortError") {
-        setProcessMsg({
-          docId,
-          message: "Document processing started. It may take a while to complete.",
-          type: "info",
-        });
-      } else {
-        setProcessMsg({ docId, message: "Failed to process document.", type: "error" });
-      }
+  async function runProcessingAction(
+    action: (docId: string) => Promise<
+      components["schemas"]["DocumentProcessStartResponse"] | null
+    >,
+    docId?: string,
+  ) {
+    const targetDocId = docId ?? processingDoc?.id;
+    if (!targetDocId) return;
+    const response = await action(targetDocId);
+    if (response && isCompletedStatus(response.status) && course) {
+      await Promise.all([
+        fetchDocumentsForCourse(course.id),
+        fetchStudyPlanForCourse(course.id),
+      ]);
     }
-
-    setProcessingDocs((prev) => prev.filter((id) => id !== docId));
   }
+
+  function openDocumentProcessing(doc: Document) {
+    setProcessingDoc(doc);
+    clearError(doc.id);
+    void runProcessingAction(processDocument, doc.id);
+  }
+
+  useEffect(() => {
+    if (!processingDoc) return;
+    const status = statusByDocId[processingDoc.id]?.status;
+    if (!isProcessingStatus(status)) return;
+
+    const interval = window.setInterval(() => {
+      void refreshDocument(processingDoc.id);
+    }, 5000);
+
+    return () => window.clearInterval(interval);
+  }, [processingDoc, refreshDocument, statusByDocId]);
 
   return (
     <Layout>
@@ -319,16 +335,18 @@ export default function CourseDetailPage() {
                           {formatBytes(doc.size_bytes)}
                         </p>
                       </div>
-                      {processingDocs.includes(doc.id) ? (
+                      {isInFlight(doc.id) ||
+                      isProcessingStatus(statusByDocId[doc.id]?.status) ? (
                         <span className="shrink-0 text-xs text-gray-400">
                           Processing...
                         </span>
                       ) : (
                         <button
                           type="button"
-                          onClick={() => processDocument(doc.id)}
+                          onClick={() => openDocumentProcessing(doc)}
                           className="shrink-0 rounded-full p-1 text-gray-400 transition-colors hover:bg-amber-50 hover:text-amber-600"
                           title="Process document"
+                          aria-label="Process document"
                         >
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -391,39 +409,25 @@ export default function CourseDetailPage() {
         )}
       </div>
 
-      {processMsg && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-16 pointer-events-none">
-          <div
-            className={`pointer-events-auto max-w-sm rounded-xl px-4 py-3 text-sm shadow-lg ring-1 ring-inset ${
-              processMsg.type === "success"
-                ? "bg-green-50 text-green-800 ring-green-500/30"
-                : processMsg.type === "info"
-                  ? "bg-blue-50 text-blue-800 ring-blue-500/30"
-                  : "bg-red-50 text-red-800 ring-red-500/30"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <span className="font-medium">
-                {processMsg.type === "success"
-                  ? "Success"
-                  : processMsg.type === "info"
-                    ? "Processing"
-                    : "Error"}
-              </span>
-              <span className="text-gray-600">{processMsg.message}</span>
-              <button
-                type="button"
-                onClick={() => setProcessMsg(null)}
-                className="ml-2 shrink-0 rounded-full p-0.5 text-gray-400 hover:text-gray-600"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DocumentProcessingModal
+        open={!!processingDoc}
+        documentName={processingDoc?.filename ?? ""}
+        response={
+          processingDoc ? statusByDocId[processingDoc.id] ?? null : null
+        }
+        error={processingDoc ? errorByDocId[processingDoc.id] ?? null : null}
+        isLoading={processingDoc ? isInFlight(processingDoc.id) : false}
+        onClose={() => setProcessingDoc(null)}
+        onRefresh={() => {
+          void runProcessingAction(refreshDocument);
+        }}
+        onRetry={() => {
+          void runProcessingAction(retryDocument);
+        }}
+        onReprocess={() => {
+          void runProcessingAction(reprocessDocument);
+        }}
+      />
     </Layout>
   );
 }

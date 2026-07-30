@@ -280,14 +280,49 @@ export interface paths {
         put?: never;
         /**
          * Process Document
-         * @description Trigger LP pipeline processing for an uploaded document.
-         *
-         *     Resolves the storage path from the DocumentModel and calls the LP
-         *     service directly — no HTTP round-trip, no duplicate app instance.
-         *     The pipeline result is stored in the shared ``pipeline_cache`` under
-         *     ``stable_doc_id(storage_path)`` so all subsequent reads hit the same key.
+         * @description Start LP processing if needed and return queue status immediately.
          */
         post: operations["process_document_api_documents__document_id__process_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/documents/{document_id}/process/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retry Document Processing
+         * @description Explicitly retry a failed document processing job.
+         */
+        post: operations["retry_document_processing_api_documents__document_id__process_retry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/documents/{document_id}/process/reprocess": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reprocess Document
+         * @description Explicitly reprocess a previously finished document processing job.
+         */
+        post: operations["reprocess_document_api_documents__document_id__process_reprocess_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1475,6 +1510,25 @@ export interface components {
             created_at: string;
         };
         /**
+         * DocumentBookProcess
+         * @description Book pipeline process status summary.
+         */
+        DocumentBookProcess: {
+            /** Status */
+            status: string;
+            /** Retry Count */
+            retry_count: number;
+            /** Max Retries */
+            max_retries: number;
+            /** Error Message */
+            error_message?: string | null;
+            /**
+             * Updated At
+             * @default
+             */
+            updated_at: string;
+        };
+        /**
          * DocumentConcept
          * @description A single concept extracted from a document.
          */
@@ -1515,26 +1569,76 @@ export interface components {
             files: string[];
         };
         /**
-         * DocumentProcessResponse
-         * @description Response for POST /api/documents/{document_id}/process.
+         * DocumentProcessRun
+         * @description One process run grouped by mode (process/retry/reprocess).
          */
-        DocumentProcessResponse: {
-            /** Doc Id */
-            doc_id: string;
-            /** Title */
-            title: string;
-            /** Units Count */
-            units_count: number;
-            /** Concepts Count */
-            concepts_count: number;
-            /** Graph Nodes */
-            graph_nodes: number;
-            /** Graph Edges */
-            graph_edges: number;
-            /** Lessons */
-            lessons: number;
-            /** Milestones */
-            milestones: number;
+        DocumentProcessRun: {
+            /** Process Id */
+            process_id: number;
+            /** Run Mode */
+            run_mode: string;
+            /** Status */
+            status: string;
+            /** Retry Count */
+            retry_count: number;
+            /** Max Retries */
+            max_retries: number;
+            /** Error Message */
+            error_message?: string | null;
+            /**
+             * Created At
+             * @default
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * @default
+             */
+            updated_at: string;
+            /** Stages */
+            stages?: components["schemas"]["DocumentProcessStage"][];
+        };
+        /**
+         * DocumentProcessStage
+         * @description A persisted pipeline stage update.
+         */
+        DocumentProcessStage: {
+            /** Stage */
+            stage: string;
+            /** Result */
+            result: string;
+            /**
+             * Output
+             * @default
+             */
+            output: string;
+            /**
+             * Created At
+             * @default
+             */
+            created_at: string;
+        };
+        /**
+         * DocumentProcessStartResponse
+         * @description Response for kickoff/retry processing endpoints.
+         */
+        DocumentProcessStartResponse: {
+            /** Document Id */
+            document_id: string;
+            /** Lp Doc Id */
+            lp_doc_id: string;
+            /** Status */
+            status: string;
+            /** Already Started */
+            already_started: boolean;
+            /** Can Retry */
+            can_retry: boolean;
+            /** Message */
+            message: string;
+            latest_process_run: components["schemas"]["DocumentProcessRun"];
+            /** Process Runs */
+            process_runs?: components["schemas"]["DocumentProcessRun"][];
+            book_pipeline?: components["schemas"]["DocumentBookProcess"] | null;
         };
         /**
          * DocumentStudyPlanSummary
@@ -4369,12 +4473,74 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Successful Response */
-            200: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocumentProcessResponse"];
+                    "application/json": components["schemas"]["DocumentProcessStartResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_document_processing_api_documents__document_id__process_retry_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentProcessStartResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reprocess_document_api_documents__document_id__process_reprocess_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentProcessStartResponse"];
                 };
             };
             /** @description Validation Error */
