@@ -87,6 +87,12 @@ export default function CourseDetailPage() {
 
   const [documents, setDocuments] = useState<Document[]>([]);
   const [docsLoading, setDocsLoading] = useState(true);
+  const [processingDocs, setProcessingDocs] = useState<string[]>([]);
+  const [processMsg, setProcessMsg] = useState<{
+    docId: string;
+    message: string;
+    type: "success" | "info" | "error";
+  } | null>(null);
 
   const [studyPlan, setStudyPlan] = useState<CourseStudyPlanResponse | null>(
     null,
@@ -153,6 +159,44 @@ export default function CourseDetailPage() {
       cancelled = true;
     };
   }, [course]);
+
+  async function processDocument(docId: string) {
+    setProcessingDocs((prev) => [...prev, docId]);
+    setProcessMsg(null);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30_000);
+
+    try {
+      const { error } = await client.POST(
+        "/api/documents/{document_id}/process",
+        {
+          params: { path: { document_id: docId } },
+          signal: controller.signal,
+        } as never,
+      );
+      clearTimeout(timeout);
+
+      if (error) {
+        setProcessMsg({ docId, message: "Failed to process document.", type: "error" });
+      } else {
+        setProcessMsg({ docId, message: "Document processed successfully.", type: "success" });
+      }
+    } catch (err: unknown) {
+      clearTimeout(timeout);
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setProcessMsg({
+          docId,
+          message: "Document processing started. It may take a while to complete.",
+          type: "info",
+        });
+      } else {
+        setProcessMsg({ docId, message: "Failed to process document.", type: "error" });
+      }
+    }
+
+    setProcessingDocs((prev) => prev.filter((id) => id !== docId));
+  }
 
   return (
     <Layout>
@@ -275,6 +319,31 @@ export default function CourseDetailPage() {
                           {formatBytes(doc.size_bytes)}
                         </p>
                       </div>
+                      {processingDocs.includes(doc.id) ? (
+                        <span className="shrink-0 text-xs text-gray-400">
+                          Processing...
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => processDocument(doc.id)}
+                          className="shrink-0 rounded-full p-1 text-gray-400 transition-colors hover:bg-amber-50 hover:text-amber-600"
+                          title="Process document"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            className="h-4 w-4"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 1a.75.75 0 0 1 .75.75v2.212l1.354-.781a.75.75 0 0 1 .75 1.299L10.5 5.76v1.49l2.354-1.358a.75.75 0 0 1 .75 1.299L11.25 8.5v1.25a.75.75 0 0 1-1.5 0V8.5l-2.354 1.358a.75.75 0 0 1-.75-1.299L8.75 7.25V5.76L6.396 7.118a.75.75 0 0 1-.75-1.299L7 5.962V3.75a.75.75 0 0 1 .75-.75H8.5v-.75A.75.75 0 0 1 9.25 1h.75Zm-.466 11.79a.75.75 0 0 1 .932 0l3.75 3a.75.75 0 0 1-.932 1.17L10 14.31l-3.534 2.65a.75.75 0 0 1-.932-1.17l3.75-3Z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -321,6 +390,40 @@ export default function CourseDetailPage() {
           </>
         )}
       </div>
+
+      {processMsg && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-16 pointer-events-none">
+          <div
+            className={`pointer-events-auto max-w-sm rounded-xl px-4 py-3 text-sm shadow-lg ring-1 ring-inset ${
+              processMsg.type === "success"
+                ? "bg-green-50 text-green-800 ring-green-500/30"
+                : processMsg.type === "info"
+                  ? "bg-blue-50 text-blue-800 ring-blue-500/30"
+                  : "bg-red-50 text-red-800 ring-red-500/30"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="font-medium">
+                {processMsg.type === "success"
+                  ? "Success"
+                  : processMsg.type === "info"
+                    ? "Processing"
+                    : "Error"}
+              </span>
+              <span className="text-gray-600">{processMsg.message}</span>
+              <button
+                type="button"
+                onClick={() => setProcessMsg(null)}
+                className="ml-2 shrink-0 rounded-full p-0.5 text-gray-400 hover:text-gray-600"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }
