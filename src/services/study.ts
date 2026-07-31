@@ -68,6 +68,16 @@ export interface StudyContent {
   practiceCards: PracticeCardDef[];
 }
 
+export interface StudyDocumentData {
+  documentId: string;
+  documentName: string;
+  groups: StudyGroup[];
+  progressItems: StudyProgressItem[];
+  contentMap: Record<string, StudyContent>;
+  lessonDbIdMap: Record<string, number>;
+  resumeLessonId: string | null;
+}
+
 // ── Top-level page data ───────────────────────────────────────────────────────
 
 export interface StudyPageData {
@@ -93,6 +103,10 @@ export interface StudyPageData {
    * A lesson is absent from the map if lesson_id was null (not yet provisioned).
    */
   lessonDbIdMap: Record<string, number>;
+  /** Per-document study payloads for the study screen picker. */
+  documents: StudyDocumentData[];
+  /** Default selected document id for the screen. */
+  selectedDocumentId: string | null;
   /**
    * The lesson id to open on page load (most recently accessed).
    * Null if the user has no progress — falls back to the first item in groups.

@@ -8,6 +8,8 @@ interface NotesCardProps {
   status?:   NoteStatus;
   dragging?: boolean;
   onDragStart?: (event: React.PointerEvent<HTMLDivElement>) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   selectionText?: string;
   onAddSelection?: () => void;
   onDismissSelection?: () => void;
@@ -95,16 +97,24 @@ export default function NotesCard({
   status = "idle",
   dragging = false,
   onDragStart,
+  open,
+  onOpenChange,
   selectionText = "",
   onAddSelection,
   onDismissSelection,
   className = "",
 }: NotesCardProps) {
-  const [open, setOpen] = useState(false);
+  const [openInternal, setOpenInternal] = useState(false);
   const [maximized, setMaximized] = useState(false);
+  const isOpen = open ?? openInternal;
+
+  function setOpen(next: boolean) {
+    if (open === undefined) setOpenInternal(next);
+    onOpenChange?.(next);
+  }
 
   // Collapsed state — chip trigger
-  if (!open) {
+  if (!isOpen) {
     return (
       <div className={`flex items-start ${className}`}>
         <button

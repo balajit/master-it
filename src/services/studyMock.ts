@@ -1,6 +1,7 @@
 import type {
   StudyService,
   StudyPageData,
+  StudyDocumentData,
   StudyGroup,
   StudyProgressItem,
   StudyContent,
@@ -105,6 +106,18 @@ function buildMockStudyPage(courseId: string): StudyPageData {
   }
 
   return {
+    documents: [
+      {
+        documentId: "mock-doc-1",
+        documentName: "Mock Primary Document",
+        groups: MOCK_GROUPS,
+        progressItems,
+        contentMap,
+        lessonDbIdMap: {},
+        resumeLessonId: allIds[0] ?? null,
+      },
+    ] as StudyDocumentData[],
+    selectedDocumentId: "mock-doc-1",
     courseTitle: `Sample Course ${courseId}`,
     lessonCount: allIds.length,
     totalMinutes: 0,
@@ -139,6 +152,10 @@ export class MockStudyService implements StudyService {
       }
 
       return {
+        documents: apiData.documents,
+        selectedDocumentId:
+          apiData.documents.find((doc) => doc.progressItems.length > 0)?.documentId
+          ?? apiData.selectedDocumentId,
         courseTitle: apiData.courseTitle?.trim().length
           ? apiData.courseTitle
           : mock.courseTitle,

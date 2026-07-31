@@ -2,6 +2,7 @@ import client from "../api/client";
 import type {
   StudyService,
   StudyPageData,
+  StudyDocumentData,
   StudyGroup,
   StudyItem,
   StudyProgressItem,
@@ -13,10 +14,44 @@ import type { ContentItem } from "../types/contentNode";
 type Chapter = components["schemas"]["Chapter"];
 type Lesson  = components["schemas"]["Lesson"];
 type Page = components["schemas"]["Page"];
-type ApiContentItem = Page["items"][number];
+type ApiContentItem = NonNullable<Page["items"]>[number];
+type TextRunMetadata = components["schemas"]["TextRunMetadata"];
+
+interface PlanDocumentNode {
+  document_id: string;
+  document_name: string;
+  chapters: Chapter[];
+}
+
+interface TransformedStudyData {
+  groups: StudyGroup[];
+  progressItems: StudyProgressItem[];
+  contentMap: Record<string, StudyContent>;
+  lessonDbIdMap: Record<string, number>;
+}
 
 function toNumber(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function mapTextRuns(runs?: TextRunMetadata[]) {
+  if (!Array.isArray(runs) || runs.length === 0) return undefined;
+  return runs.map((run) => ({
+    text: typeof run.text === "string" ? run.text : "",
+    linkTarget: run.link_target || undefined,
+    isBold: !!run.style?.font?.is_bold,
+    isItalic: !!run.style?.font?.is_italic,
+    isUnderline: !!run.style?.font?.is_underline,
+    isStrikethrough: !!run.style?.font?.is_strikethrough,
+  }));
+}
+
+function mapBlockStyle(style?: components["schemas"]["BlockStyleMetadata"] | null) {
+  if (!style) return undefined;
+  return {
+    alignment: style.alignment || undefined,
+    indentLevel: toNumber(style.indent_level, 0),
+  };
 }
 
 function mapApiItem(item: ApiContentItem): ContentItem | null {
@@ -32,7 +67,15 @@ function mapApiItem(item: ApiContentItem): ContentItem | null {
         id,
         order,
         content: typeof item.content === "string" ? item.content : "",
+        textRuns: mapTextRuns(item.metadata?.text_runs),
         level: toNumber(item.level, 0),
+        blockStyle: mapBlockStyle(item.style),
+        semanticType: item.metadata?.semantic_type ?? null,
+        checkboxState: item.metadata?.checkbox_state ?? null,
+        numberedItem: item.metadata?.numbered_item ?? null,
+        hasFillInBlanks: item.metadata?.has_fill_in_blanks ?? null,
+        fillInBlankIds: item.metadata?.fill_in_blank_ids ?? [],
+        blankSpanPositions: item.metadata?.blank_span_positions ?? [],
       };
     case "heading":
       return {
@@ -40,7 +83,10 @@ function mapApiItem(item: ApiContentItem): ContentItem | null {
         id,
         order,
         content: typeof item.content === "string" ? item.content : "",
+        textRuns: mapTextRuns(item.metadata?.text_runs),
         level: toNumber(item.level, 1),
+        blockStyle: mapBlockStyle(item.style),
+        headingNumber: item.metadata?.number ?? null,
       };
     case "equation":
       return {
@@ -49,6 +95,8 @@ function mapApiItem(item: ApiContentItem): ContentItem | null {
         order,
         latex: typeof item.latex === "string" ? item.latex : "",
         label: item.label ?? null,
+        isBlock: item.metadata?.is_block ?? null,
+        hasMathml: item.metadata?.has_mathml ?? null,
       };
     case "code":
       return {
@@ -57,6 +105,8 @@ function mapApiItem(item: ApiContentItem): ContentItem | null {
         order,
         content: typeof item.content === "string" ? item.content : "",
         language: item.language ?? null,
+        filename: item.metadata?.filename ?? null,
+        lineStart: item.metadata?.line_start ?? null,
       };
     case "image":
       return {
@@ -64,7 +114,12 @@ function mapApiItem(item: ApiContentItem): ContentItem | null {
         id,
         order,
         data: typeof item.data === "string" ? item.data : "",
-        caption: item.caption ?? null,
+        imageUrl: item.metadata?.image_uri || undefined,
+        altText: item.metadata?.alt_text || undefined,
+        caption: item.caption ?? item.metadata?.caption_text ?? null,
+        mimeType: item.metadata?.mimetype ?? null,
+        width: item.metadata?.width ?? null,
+        height: item.metadata?.height ?? null,
       };
     case "table":
       return {
@@ -74,8 +129,11 @@ function mapApiItem(item: ApiContentItem): ContentItem | null {
         caption: item.caption ?? null,
         headers: Array.isArray(item.headers) ? item.headers : [],
         rows: Array.isArray(item.rows)
-          ? item.rows.map((row) => (Array.isArray(row) ? row : []))
+          ? item.rows.map((row: unknown) => (Array.isArray(row) ? row : []))
           : [],
+        blockStyle: mapBlockStyle(item.style),
+        rowCount: item.metadata?.row_count ?? null,
+        columnCount: item.metadata?.column_count ?? null,
       };
     case "list":
       return {
@@ -84,6 +142,48 @@ function mapApiItem(item: ApiContentItem): ContentItem | null {
         order,
         ordered: !!item.ordered,
         items: Array.isArray(item.items) ? item.items : [],
+        itemTextRuns: Array.isArray(item.metadata?.item_text_runs)
+          ? item.metadata.item_text_runs.map((runs: TextRunMetadata[] | undefined) => mapTextRuns(runs) ?? [])
+          : undefined,
+        blockStyle: mapBlockStyle(item.style),
+        listStyle: item.metadata?.list_style ?? null,
+      };
+    case "question":
+      return {
+        type: "question",
+        id,
+        order,
+        questionType: item.question_type ?? "unknown",
+        content: typeof item.content === "string" ? item.content : "",
+        options: Array.isArray(item.options)
+          ? item.options.map((opt) => ({
+              label: opt.label ?? "",
+              text: opt.text ?? "",
+              isCorrect: opt.is_correct ?? null,
+              explanation: opt.explanation ?? "",
+            }))
+          : [],
+        blanks: Array.isArray(item.blanks)
+          ? item.blanks.map((blank) => ({
+              blankId: toNumber(blank.blank_id, 0),
+              answer: blank.answer ?? "",
+            }))
+          : [],
+        statements: Array.isArray(item.statements)
+          ? item.statements.map((statement) => ({
+              number: statement.number ?? null,
+              text: statement.text ?? "",
+              expectedAnswer: statement.expected_answer ?? null,
+            }))
+          : [],
+        solution: item.solution ?? "",
+        explanation: item.explanation ?? "",
+        points: toNumber(item.points, 0),
+        blockStyle: mapBlockStyle(item.style),
+        numberedItem: item.metadata?.numbered_item ?? null,
+        hasFillInBlanks: item.metadata?.has_fill_in_blanks ?? null,
+        fillInBlankIds: item.metadata?.fill_in_blank_ids ?? [],
+        blankSpanPositions: item.metadata?.blank_span_positions ?? [],
       };
     default:
       return null;
@@ -118,14 +218,69 @@ export class ApiStudyService implements StudyService {
       throw new Error(`Failed to load study plan: ${JSON.stringify(planError)}`);
     }
 
-    const allGroups:        StudyGroup[]                 = [];
-    const allProgressItems: StudyProgressItem[]          = [];
-    const allContentMap:    Record<string, StudyContent> = {};
-    const lessonDbIdMap:    Record<string, number>       = {};
+    const sourceDocuments: PlanDocumentNode[] = Array.isArray((planData as { documents?: unknown }).documents)
+      ? ((planData as { documents?: PlanDocumentNode[] }).documents ?? [])
+      : [];
 
-    const chapters = [...(planData.chapters ?? [])].sort((a, b) => a.order - b.order);
+    const documents: StudyDocumentData[] = sourceDocuments.map((doc, index) => {
+      const transformed = this._transformChapters(doc.chapters ?? []);
+      return {
+        documentId: doc.document_id || `document-${index + 1}`,
+        documentName: doc.document_name || `Document ${index + 1}`,
+        ...transformed,
+        resumeLessonId: null,
+      };
+    });
 
-    for (const chapter of chapters) {
+    if (documents.length === 0) {
+      const transformed = this._transformChapters(planData.chapters ?? []);
+      documents.push({
+        documentId: "default",
+        documentName: "All Documents",
+        ...transformed,
+        resumeLessonId: null,
+      });
+    }
+
+    const { data: resumeData, error: resumeError } = await client.GET(
+      "/api/v1/users/me/courses/{course_id}/resume",
+      { params: { path: { course_id: courseIdNum } } },
+    );
+
+    if (!resumeError && resumeData?.lesson_id != null) {
+      for (const doc of documents) {
+        const matchedLesson = Object.entries(doc.lessonDbIdMap).find(
+          ([, dbId]) => dbId === resumeData.lesson_id,
+        );
+        doc.resumeLessonId = matchedLesson?.[0] ?? null;
+      }
+    }
+
+    const selectedDocument = documents.find((doc) => doc.progressItems.length > 0) ?? documents[0] ?? null;
+    const selectedDocumentId = selectedDocument?.documentId ?? null;
+
+    return {
+      courseTitle:   planData.course_title || "Course",
+      lessonCount:   selectedDocument?.progressItems.length ?? 0,
+      totalMinutes:  0,
+      groups:        selectedDocument?.groups ?? [],
+      progressItems: selectedDocument?.progressItems ?? [],
+      contentMap:    selectedDocument?.contentMap ?? {},
+      lessonDbIdMap: selectedDocument?.lessonDbIdMap ?? {},
+      resumeLessonId: selectedDocument?.resumeLessonId ?? null,
+      documents,
+      selectedDocumentId,
+    };
+  }
+
+  private _transformChapters(chapters: Chapter[]): TransformedStudyData {
+    const allGroups: StudyGroup[] = [];
+    const allProgressItems: StudyProgressItem[] = [];
+    const allContentMap: Record<string, StudyContent> = {};
+    const lessonDbIdMap: Record<string, number> = {};
+
+    const sortedChapters = [...chapters].sort((a, b) => a.order - b.order);
+    for (const chapter of sortedChapters) {
       const { group, progressItems, contentMap } = this._transformChapter(
         chapter,
         lessonDbIdMap,
@@ -135,35 +290,15 @@ export class ApiStudyService implements StudyService {
       Object.assign(allContentMap, contentMap);
     }
 
-    let resumeLessonId: string | null = null;
-    const { data: resumeData, error: resumeError } = await client.GET(
-      "/api/v1/users/me/courses/{course_id}/resume",
-      { params: { path: { course_id: courseIdNum } } },
-    );
-
-    if (!resumeError && resumeData?.lesson_id != null) {
-      const matchedLesson = Object.entries(lessonDbIdMap).find(
-        ([, dbId]) => dbId === resumeData.lesson_id,
-      );
-      resumeLessonId = matchedLesson?.[0] ?? null;
-    }
-
     return {
-      courseTitle:   planData.course_title || "Course",
-      lessonCount:   allProgressItems.length,
-      totalMinutes:  0,
-      groups:        allGroups,
+      groups: allGroups,
       progressItems: allProgressItems,
-      contentMap:    allContentMap,
+      contentMap: allContentMap,
       lessonDbIdMap,
-      resumeLessonId,
     };
   }
 
-  private _transformChapter(
-    chapter: Chapter,
-    lessonDbIdMap: Record<string, number>,
-  ): {
+  private _transformChapter(chapter: Chapter, lessonDbIdMap: Record<string, number>): {
     group: StudyGroup;
     progressItems: StudyProgressItem[];
     contentMap: Record<string, StudyContent>;

@@ -60,6 +60,32 @@ describe("StudyPage", () => {
       },
       lessonDbIdMap: {},
       resumeLessonId: "lesson-2",
+      documents: [
+        {
+          documentId: "doc-1",
+          documentName: "Main Document",
+          groups: [
+            {
+              title: "Chapter 1",
+              items: [
+                { id: "lesson-1", label: "Vectors", status: "not_started" },
+                { id: "lesson-2", label: "Matrices", status: "not_started" },
+              ],
+            },
+          ],
+          progressItems: [
+            { id: "lesson-1", label: "Vectors", status: "not_started" },
+            { id: "lesson-2", label: "Matrices", status: "practiced" },
+          ],
+          contentMap: {
+            "lesson-1": { info: null, learning: null, goal: null, practiceCards: [] },
+            "lesson-2": { info: null, learning: null, goal: null, practiceCards: [] },
+          },
+          lessonDbIdMap: {},
+          resumeLessonId: "lesson-2",
+        },
+      ],
+      selectedDocumentId: "doc-1",
     };
 
     mockGetStudyPage.mockResolvedValue(data);

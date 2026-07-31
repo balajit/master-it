@@ -249,6 +249,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/courses/{course_id}/documents/upload_sample": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Document Sample
+         * @description Upload a sampled single-page PDF as a separate document.
+         */
+        post: operations["upload_document_sample_api_courses__course_id__documents_upload_sample_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/documents/{document_id}": {
         parameters: {
             query?: never;
@@ -1283,10 +1303,74 @@ export interface components {
             /** Role Name */
             role_name: string;
         };
+        /** BlockStyleMetadata */
+        BlockStyleMetadata: {
+            /**
+             * Alignment
+             * @default left
+             */
+            alignment: string;
+            /**
+             * Indent Level
+             * @default 0
+             */
+            indent_level: number;
+            /**
+             * Line Spacing
+             * @default 1
+             */
+            line_spacing: number;
+            /**
+             * Space Before
+             * @default 0
+             */
+            space_before: number;
+            /**
+             * Space After
+             * @default 0
+             */
+            space_after: number;
+            /**
+             * Background Color
+             * @default
+             */
+            background_color: string;
+            /**
+             * Border Color
+             * @default
+             */
+            border_color: string;
+            /**
+             * Border Width
+             * @default 0
+             */
+            border_width: number;
+            /**
+             * Padding
+             * @default 0
+             */
+            padding: number;
+            font?: components["schemas"]["FontMetadata"] | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            };
+        };
         /** Body_upload_document_api_courses__course_id__documents_post */
         Body_upload_document_api_courses__course_id__documents_post: {
             /** File */
             file: string;
+        };
+        /** Body_upload_document_sample_api_courses__course_id__documents_upload_sample_post */
+        Body_upload_document_sample_api_courses__course_id__documents_upload_sample_post: {
+            /** File */
+            file: string;
+            /** Sample Start Page */
+            sample_start_page: number;
+            /** Sample End Page */
+            sample_end_page?: number | null;
+            /** Sampled Filename */
+            sampled_filename?: string | null;
         };
         /**
          * BoldRun
@@ -1397,8 +1481,54 @@ export interface components {
             language?: string | null;
             /** Bbox */
             bbox?: {
-                [key: string]: unknown;
+                [key: string]: number;
             } | null;
+            metadata?: components["schemas"]["CodeItemMetadata"];
+        };
+        /** CodeItemMetadata */
+        CodeItemMetadata: {
+            /** Label */
+            label?: string | null;
+            /** Docling Parent Ref */
+            docling_parent_ref?: string | null;
+            /** Layout Line Id */
+            layout_line_id?: string | null;
+            /** Layout Block Index */
+            layout_block_index?: number | null;
+            /** Layout Line Index */
+            layout_line_index?: number | null;
+            /** Layout Span Count */
+            layout_span_count?: number | null;
+            /** Layout Origin */
+            layout_origin?: string | null;
+            /** Semantic Origin */
+            semantic_origin?: string | null;
+            /** Relation Method */
+            relation_method?: string | null;
+            /** Relation Confidence */
+            relation_confidence?: number | null;
+            /** Question Group Id */
+            question_group_id?: string | null;
+            /** Sequence Index */
+            sequence_index?: number | null;
+            /** Resolved Section Heading */
+            resolved_section_heading?: string | null;
+            /** Resolved Parent Ref */
+            resolved_parent_ref?: string | null;
+            /** Semantic Node Type */
+            semantic_node_type?: string | null;
+            /** Semantic Match Score */
+            semantic_match_score?: number | null;
+            /**
+             * Filename
+             * @default
+             */
+            filename: string;
+            /**
+             * Line Start
+             * @default 1
+             */
+            line_start: number;
         };
         /**
          * CodeRun
@@ -1451,6 +1581,24 @@ export interface components {
             status: "OPEN" | "CLOSED" | "COMING_SOON";
         };
         /**
+         * CourseStudyPlanDocument
+         * @description Per-document study plan payload within a course.
+         */
+        CourseStudyPlanDocument: {
+            /** Document Id */
+            document_id: string;
+            /**
+             * Document Name
+             * @default
+             */
+            document_name: string;
+            /**
+             * Chapters
+             * @default []
+             */
+            chapters: components["schemas"]["Chapter"][];
+        };
+        /**
          * CourseStudyPlanResponse
          * @description Response for GET /api/courses/{course_id}/study-plan.
          */
@@ -1463,10 +1611,16 @@ export interface components {
              */
             course_title: string;
             /**
-             * Chapters
+             * Documents
              * @default []
              */
-            chapters: components["schemas"]["Chapter"][];
+            documents: components["schemas"]["CourseStudyPlanDocument"][];
+            /**
+             * Chapters
+             * @deprecated
+             * @description DEPRECATED: use documents[].chapters instead
+             */
+            chapters?: components["schemas"]["Chapter"][];
         };
         /** CreatePermission */
         CreatePermission: {
@@ -1791,8 +1945,48 @@ export interface components {
             label?: string | null;
             /** Bbox */
             bbox?: {
-                [key: string]: unknown;
+                [key: string]: number;
             } | null;
+            metadata?: components["schemas"]["EquationItemMetadata"];
+        };
+        /** EquationItemMetadata */
+        EquationItemMetadata: {
+            /** Label */
+            label?: string | null;
+            /** Docling Parent Ref */
+            docling_parent_ref?: string | null;
+            /** Layout Line Id */
+            layout_line_id?: string | null;
+            /** Layout Block Index */
+            layout_block_index?: number | null;
+            /** Layout Line Index */
+            layout_line_index?: number | null;
+            /** Layout Span Count */
+            layout_span_count?: number | null;
+            /** Layout Origin */
+            layout_origin?: string | null;
+            /** Semantic Origin */
+            semantic_origin?: string | null;
+            /** Relation Method */
+            relation_method?: string | null;
+            /** Relation Confidence */
+            relation_confidence?: number | null;
+            /** Question Group Id */
+            question_group_id?: string | null;
+            /** Sequence Index */
+            sequence_index?: number | null;
+            /** Resolved Section Heading */
+            resolved_section_heading?: string | null;
+            /** Resolved Parent Ref */
+            resolved_parent_ref?: string | null;
+            /** Semantic Node Type */
+            semantic_node_type?: string | null;
+            /** Semantic Match Score */
+            semantic_match_score?: number | null;
+            /** Is Block */
+            is_block?: boolean | null;
+            /** Has Mathml */
+            has_mathml?: boolean | null;
         };
         /**
          * EquationNode
@@ -1954,6 +2148,49 @@ export interface components {
             /** Back */
             back?: string | null;
         };
+        /** FontMetadata */
+        FontMetadata: {
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /**
+             * Size
+             * @default 0
+             */
+            size: number;
+            /**
+             * Is Bold
+             * @default false
+             */
+            is_bold: boolean;
+            /**
+             * Is Italic
+             * @default false
+             */
+            is_italic: boolean;
+            /**
+             * Is Underline
+             * @default false
+             */
+            is_underline: boolean;
+            /**
+             * Is Strikethrough
+             * @default false
+             */
+            is_strikethrough: boolean;
+            /**
+             * Color
+             * @default
+             */
+            color: string;
+            /**
+             * Background Color
+             * @default
+             */
+            background_color: string;
+        };
         /**
          * GoalCardPlacementStrategy
          * @description Where goal cards (milestones/checkpoints) appear.
@@ -2059,12 +2296,53 @@ export interface components {
             level: number;
             /** Bbox */
             bbox?: {
-                [key: string]: unknown;
+                [key: string]: number;
             } | null;
-            /** Style */
-            style?: {
-                [key: string]: unknown;
-            } | null;
+            style?: components["schemas"]["BlockStyleMetadata"] | null;
+            metadata?: components["schemas"]["HeadingItemMetadata"];
+        };
+        /** HeadingItemMetadata */
+        HeadingItemMetadata: {
+            /** Label */
+            label?: string | null;
+            /** Docling Parent Ref */
+            docling_parent_ref?: string | null;
+            /** Layout Line Id */
+            layout_line_id?: string | null;
+            /** Layout Block Index */
+            layout_block_index?: number | null;
+            /** Layout Line Index */
+            layout_line_index?: number | null;
+            /** Layout Span Count */
+            layout_span_count?: number | null;
+            /** Layout Origin */
+            layout_origin?: string | null;
+            /** Semantic Origin */
+            semantic_origin?: string | null;
+            /** Relation Method */
+            relation_method?: string | null;
+            /** Relation Confidence */
+            relation_confidence?: number | null;
+            /** Question Group Id */
+            question_group_id?: string | null;
+            /** Sequence Index */
+            sequence_index?: number | null;
+            /** Resolved Section Heading */
+            resolved_section_heading?: string | null;
+            /** Resolved Parent Ref */
+            resolved_parent_ref?: string | null;
+            /** Semantic Node Type */
+            semantic_node_type?: string | null;
+            /** Semantic Match Score */
+            semantic_match_score?: number | null;
+            /** Number */
+            number?: string | null;
+            /** Heading Level */
+            heading_level?: number | null;
+            /** Node Level */
+            node_level?: number | null;
+            /** Text Runs */
+            text_runs?: components["schemas"]["TextRunMetadata"][];
         };
         /**
          * HeadingNode
@@ -2112,8 +2390,89 @@ export interface components {
             caption?: string | null;
             /** Bbox */
             bbox?: {
-                [key: string]: unknown;
+                [key: string]: number;
             } | null;
+            metadata?: components["schemas"]["ImageItemMetadata"];
+        };
+        /** ImageItemMetadata */
+        ImageItemMetadata: {
+            /** Label */
+            label?: string | null;
+            /** Docling Parent Ref */
+            docling_parent_ref?: string | null;
+            /** Layout Line Id */
+            layout_line_id?: string | null;
+            /** Layout Block Index */
+            layout_block_index?: number | null;
+            /** Layout Line Index */
+            layout_line_index?: number | null;
+            /** Layout Span Count */
+            layout_span_count?: number | null;
+            /** Layout Origin */
+            layout_origin?: string | null;
+            /** Semantic Origin */
+            semantic_origin?: string | null;
+            /** Relation Method */
+            relation_method?: string | null;
+            /** Relation Confidence */
+            relation_confidence?: number | null;
+            /** Question Group Id */
+            question_group_id?: string | null;
+            /** Sequence Index */
+            sequence_index?: number | null;
+            /** Resolved Section Heading */
+            resolved_section_heading?: string | null;
+            /** Resolved Parent Ref */
+            resolved_parent_ref?: string | null;
+            /** Semantic Node Type */
+            semantic_node_type?: string | null;
+            /** Semantic Match Score */
+            semantic_match_score?: number | null;
+            /**
+             * Image Uri
+             * @default
+             */
+            image_uri: string;
+            /**
+             * Alt Text
+             * @default
+             */
+            alt_text: string;
+            /**
+             * Caption Text
+             * @default
+             */
+            caption_text: string;
+            /**
+             * Mimetype
+             * @default
+             */
+            mimetype: string;
+            /**
+             * Format
+             * @default
+             */
+            format: string;
+            /**
+             * Storage Key
+             * @default
+             */
+            storage_key: string;
+            /**
+             * Size Bytes
+             * @default 0
+             */
+            size_bytes: number;
+            /**
+             * Width
+             * @default 0
+             */
+            width: number;
+            /**
+             * Height
+             * @default 0
+             */
+            height: number;
         };
         /**
          * ItalicRun
@@ -2394,19 +2753,59 @@ export interface components {
              * @default false
              */
             ordered: boolean;
-            /**
-             * Items
-             * @default []
-             */
-            items: string[];
+            /** Items */
+            items?: string[];
             /** Bbox */
             bbox?: {
-                [key: string]: unknown;
+                [key: string]: number;
             } | null;
-            /** Style */
-            style?: {
-                [key: string]: unknown;
-            } | null;
+            style?: components["schemas"]["BlockStyleMetadata"] | null;
+            metadata?: components["schemas"]["ListItemMetadata"];
+        };
+        /** ListItemMetadata */
+        ListItemMetadata: {
+            /** Label */
+            label?: string | null;
+            /** Docling Parent Ref */
+            docling_parent_ref?: string | null;
+            /** Layout Line Id */
+            layout_line_id?: string | null;
+            /** Layout Block Index */
+            layout_block_index?: number | null;
+            /** Layout Line Index */
+            layout_line_index?: number | null;
+            /** Layout Span Count */
+            layout_span_count?: number | null;
+            /** Layout Origin */
+            layout_origin?: string | null;
+            /** Semantic Origin */
+            semantic_origin?: string | null;
+            /** Relation Method */
+            relation_method?: string | null;
+            /** Relation Confidence */
+            relation_confidence?: number | null;
+            /** Question Group Id */
+            question_group_id?: string | null;
+            /** Sequence Index */
+            sequence_index?: number | null;
+            /** Resolved Section Heading */
+            resolved_section_heading?: string | null;
+            /** Resolved Parent Ref */
+            resolved_parent_ref?: string | null;
+            /** Semantic Node Type */
+            semantic_node_type?: string | null;
+            /** Semantic Match Score */
+            semantic_match_score?: number | null;
+            /** List Style */
+            list_style?: string | null;
+            /** Item Count */
+            item_count?: number | null;
+            /** Checked Count */
+            checked_count?: number | null;
+            /** Unchecked Count */
+            unchecked_count?: number | null;
+            /** Item Text Runs */
+            item_text_runs?: components["schemas"]["TextRunMetadata"][][];
         };
         /**
          * ListItemNode
@@ -2724,11 +3123,34 @@ export interface components {
              * @default 0
              */
             order: number;
-            /**
-             * Items
-             * @default []
-             */
-            items: (components["schemas"]["TextItem"] | components["schemas"]["HeadingItem"] | components["schemas"]["ImageItem"] | components["schemas"]["TableItem"] | components["schemas"]["EquationItem"] | components["schemas"]["CodeItem"] | components["schemas"]["ListItem"])[];
+            /** Items */
+            items?: (components["schemas"]["TextItem"] | components["schemas"]["HeadingItem"] | components["schemas"]["ImageItem"] | components["schemas"]["TableItem"] | components["schemas"]["EquationItem"] | components["schemas"]["CodeItem"] | components["schemas"]["ListItem"] | components["schemas"]["QuestionItem"])[];
+            metadata?: components["schemas"]["PageMetadata"];
+        };
+        /** PageMetadata */
+        PageMetadata: {
+            /** Source Node Ids */
+            source_node_ids?: string[];
+            /** Docling Labels */
+            docling_labels?: string[];
+            /** Docling Label Counts */
+            docling_label_counts?: {
+                [key: string]: number;
+            };
+            /** Docling Parent Refs */
+            docling_parent_refs?: string[];
+            /** Ocr Enabled */
+            ocr_enabled?: boolean | null;
+            /** Pdf Document Class */
+            pdf_document_class?: string | null;
+            /** Hybrid Enabled */
+            hybrid_enabled?: boolean | null;
+            /** Layout Pages */
+            layout_pages?: number | null;
+            /** Semantic Candidates */
+            semantic_candidates?: number | null;
+            /** Second Pass Reasons */
+            second_pass_reasons?: string[];
         };
         /**
          * PageViewSchema
@@ -3098,6 +3520,164 @@ export interface components {
              * @default 0
              */
             estimated_remaining_minutes: number;
+        };
+        /** QuestionBlankMetadata */
+        QuestionBlankMetadata: {
+            /** Blank Id */
+            blank_id: number;
+            /**
+             * Placeholder
+             * @default
+             */
+            placeholder: string;
+            /**
+             * Answer
+             * @default
+             */
+            answer: string;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            };
+        };
+        /** QuestionItem */
+        QuestionItem: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "question";
+            /** Id */
+            id: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /**
+             * Question Type
+             * @default unknown
+             */
+            question_type: string;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+            /** Options */
+            options?: components["schemas"]["QuestionOptionMetadata"][];
+            /** Blanks */
+            blanks?: components["schemas"]["QuestionBlankMetadata"][];
+            /** Statements */
+            statements?: components["schemas"]["QuestionStatementMetadata"][];
+            /**
+             * Solution
+             * @default
+             */
+            solution: string;
+            /**
+             * Explanation
+             * @default
+             */
+            explanation: string;
+            /**
+             * Points
+             * @default 0
+             */
+            points: number;
+            /** Bbox */
+            bbox?: {
+                [key: string]: number;
+            } | null;
+            style?: components["schemas"]["BlockStyleMetadata"] | null;
+            metadata?: components["schemas"]["QuestionItemMetadata"];
+        };
+        /** QuestionItemMetadata */
+        QuestionItemMetadata: {
+            /** Label */
+            label?: string | null;
+            /** Docling Parent Ref */
+            docling_parent_ref?: string | null;
+            /** Layout Line Id */
+            layout_line_id?: string | null;
+            /** Layout Block Index */
+            layout_block_index?: number | null;
+            /** Layout Line Index */
+            layout_line_index?: number | null;
+            /** Layout Span Count */
+            layout_span_count?: number | null;
+            /** Layout Origin */
+            layout_origin?: string | null;
+            /** Semantic Origin */
+            semantic_origin?: string | null;
+            /** Relation Method */
+            relation_method?: string | null;
+            /** Relation Confidence */
+            relation_confidence?: number | null;
+            /** Question Group Id */
+            question_group_id?: string | null;
+            /** Sequence Index */
+            sequence_index?: number | null;
+            /** Resolved Section Heading */
+            resolved_section_heading?: string | null;
+            /** Resolved Parent Ref */
+            resolved_parent_ref?: string | null;
+            /** Semantic Node Type */
+            semantic_node_type?: string | null;
+            /** Semantic Match Score */
+            semantic_match_score?: number | null;
+            /** Semantic Type */
+            semantic_type?: string | null;
+            /** Question Signal */
+            question_signal?: string | null;
+            /** Numbered Item */
+            numbered_item?: number | null;
+            /** Statement Count */
+            statement_count?: number | null;
+            /** Has Fill In Blanks */
+            has_fill_in_blanks?: boolean | null;
+            /** Fill In Blank Ids */
+            fill_in_blank_ids?: number[];
+            /** Blank Span Positions */
+            blank_span_positions?: number[];
+            /** Checkbox State */
+            checkbox_state?: string | null;
+        };
+        /** QuestionOptionMetadata */
+        QuestionOptionMetadata: {
+            /**
+             * Label
+             * @default
+             */
+            label: string;
+            /**
+             * Text
+             * @default
+             */
+            text: string;
+            /** Is Correct */
+            is_correct?: boolean | null;
+            /**
+             * Explanation
+             * @default
+             */
+            explanation: string;
+        };
+        /** QuestionStatementMetadata */
+        QuestionStatementMetadata: {
+            /** Number */
+            number?: number | null;
+            /**
+             * Text
+             * @default
+             */
+            text: string;
+            /** Expected Answer */
+            expected_answer?: boolean | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            };
         };
         /**
          * QuizCardSchema
@@ -3572,24 +4152,55 @@ export interface components {
             order: number;
             /** Caption */
             caption?: string | null;
-            /**
-             * Headers
-             * @default []
-             */
-            headers: string[];
-            /**
-             * Rows
-             * @default []
-             */
-            rows: string[][];
+            /** Headers */
+            headers?: string[];
+            /** Rows */
+            rows?: string[][];
             /** Bbox */
             bbox?: {
-                [key: string]: unknown;
+                [key: string]: number;
             } | null;
-            /** Style */
-            style?: {
-                [key: string]: unknown;
-            } | null;
+            style?: components["schemas"]["BlockStyleMetadata"] | null;
+            metadata?: components["schemas"]["TableItemMetadata"];
+        };
+        /** TableItemMetadata */
+        TableItemMetadata: {
+            /** Label */
+            label?: string | null;
+            /** Docling Parent Ref */
+            docling_parent_ref?: string | null;
+            /** Layout Line Id */
+            layout_line_id?: string | null;
+            /** Layout Block Index */
+            layout_block_index?: number | null;
+            /** Layout Line Index */
+            layout_line_index?: number | null;
+            /** Layout Span Count */
+            layout_span_count?: number | null;
+            /** Layout Origin */
+            layout_origin?: string | null;
+            /** Semantic Origin */
+            semantic_origin?: string | null;
+            /** Relation Method */
+            relation_method?: string | null;
+            /** Relation Confidence */
+            relation_confidence?: number | null;
+            /** Question Group Id */
+            question_group_id?: string | null;
+            /** Sequence Index */
+            sequence_index?: number | null;
+            /** Resolved Section Heading */
+            resolved_section_heading?: string | null;
+            /** Resolved Parent Ref */
+            resolved_parent_ref?: string | null;
+            /** Semantic Node Type */
+            semantic_node_type?: string | null;
+            /** Semantic Match Score */
+            semantic_match_score?: number | null;
+            /** Row Count */
+            row_count?: number | null;
+            /** Column Count */
+            column_count?: number | null;
         };
         /**
          * TableNode
@@ -3648,12 +4259,99 @@ export interface components {
             level: number;
             /** Bbox */
             bbox?: {
-                [key: string]: unknown;
+                [key: string]: number;
             } | null;
-            /** Style */
-            style?: {
+            style?: components["schemas"]["BlockStyleMetadata"] | null;
+            metadata?: components["schemas"]["TextItemMetadata"];
+        };
+        /** TextItemMetadata */
+        TextItemMetadata: {
+            /** Label */
+            label?: string | null;
+            /** Docling Parent Ref */
+            docling_parent_ref?: string | null;
+            /** Layout Line Id */
+            layout_line_id?: string | null;
+            /** Layout Block Index */
+            layout_block_index?: number | null;
+            /** Layout Line Index */
+            layout_line_index?: number | null;
+            /** Layout Span Count */
+            layout_span_count?: number | null;
+            /** Layout Origin */
+            layout_origin?: string | null;
+            /** Semantic Origin */
+            semantic_origin?: string | null;
+            /** Relation Method */
+            relation_method?: string | null;
+            /** Relation Confidence */
+            relation_confidence?: number | null;
+            /** Question Group Id */
+            question_group_id?: string | null;
+            /** Sequence Index */
+            sequence_index?: number | null;
+            /** Resolved Section Heading */
+            resolved_section_heading?: string | null;
+            /** Resolved Parent Ref */
+            resolved_parent_ref?: string | null;
+            /** Semantic Node Type */
+            semantic_node_type?: string | null;
+            /** Semantic Match Score */
+            semantic_match_score?: number | null;
+            /** Source Offset */
+            source_offset?: number | null;
+            /** Source Length */
+            source_length?: number | null;
+            /** Semantic Type */
+            semantic_type?: string | null;
+            /** Exercise Type */
+            exercise_type?: string | null;
+            /** Option Count */
+            option_count?: number | null;
+            /** Numbered Item */
+            numbered_item?: number | null;
+            /** Has Fill In Blanks */
+            has_fill_in_blanks?: boolean | null;
+            /** Fill In Blank Ids */
+            fill_in_blank_ids?: number[];
+            /** Blank Span Positions */
+            blank_span_positions?: number[];
+            /** Checkbox State */
+            checkbox_state?: string | null;
+            /** Text Runs */
+            text_runs?: components["schemas"]["TextRunMetadata"][];
+        };
+        /** TextRunMetadata */
+        TextRunMetadata: {
+            /**
+             * Text
+             * @default
+             */
+            text: string;
+            /**
+             * Link Target
+             * @default
+             */
+            link_target: string;
+            style?: components["schemas"]["TextRunStyleMetadata"] | null;
+        };
+        /** TextRunStyleMetadata */
+        TextRunStyleMetadata: {
+            font?: components["schemas"]["FontMetadata"] | null;
+            /**
+             * Baseline Shift
+             * @default 0
+             */
+            baseline_shift: number;
+            /**
+             * Language
+             * @default
+             */
+            language: string;
+            /** Metadata */
+            metadata?: {
                 [key: string]: unknown;
-            } | null;
+            };
         };
         /** TokenPayload */
         TokenPayload: {
@@ -4409,6 +5107,41 @@ export interface operations {
         requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_upload_document_api_courses__course_id__documents_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentUploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_document_sample_api_courses__course_id__documents_upload_sample_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                course_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_document_sample_api_courses__course_id__documents_upload_sample_post"];
             };
         };
         responses: {

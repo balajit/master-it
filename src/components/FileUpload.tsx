@@ -49,7 +49,11 @@ export default function FileUpload({
   courseId: number;
   onUploaded?: () => void;
 }) {
+  const [uploadMode, setUploadMode] = useState<"full" | "sample">("full");
   const [url, setUrl] = useState("");
+  const [sampleStartPage, setSampleStartPage] = useState("1");
+  const [sampleEndPage, setSampleEndPage] = useState("");
+  const [sampledFilename, setSampledFilename] = useState("");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -59,11 +63,42 @@ export default function FileUpload({
     setSuccess(null);
   }
 
+  function parsePageInput(value: string): number | null {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const num = Number(trimmed);
+    if (!Number.isInteger(num) || num < 1) return null;
+    return num;
+  }
+
   async function uploadFile(file: File, label: string) {
     const validationError = validateFile(file);
     if (validationError) {
       setError(validationError);
       return;
+    }
+
+    let startPage: number | null = null;
+    let endPage: number | null = null;
+
+    if (uploadMode === "sample") {
+      startPage = parsePageInput(sampleStartPage);
+      if (startPage == null) {
+        setError("Sample start page must be a whole number of 1 or greater");
+        return;
+      }
+
+      if (sampleEndPage.trim().length > 0) {
+        endPage = parsePageInput(sampleEndPage);
+        if (endPage == null) {
+          setError("Sample end page must be a whole number of 1 or greater");
+          return;
+        }
+        if (endPage < startPage) {
+          setError("Sample end page must be greater than or equal to start page");
+          return;
+        }
+      }
     }
 
     reset();
@@ -73,17 +108,42 @@ export default function FileUpload({
       const form = new FormData();
       form.append("file", file);
 
-      const { error: err } = await client.POST(
-        "/api/courses/{course_id}/documents",
-        {
-          params: { path: { course_id: courseId } },
-          body: form as never,
-        },
-      );
+      let err: unknown = null;
+      if (uploadMode === "sample") {
+        form.append("sample_start_page", String(startPage));
+        if (endPage != null) {
+          form.append("sample_end_page", String(endPage));
+        }
+        const trimmedSampledFilename = sampledFilename.trim();
+        if (trimmedSampledFilename.length > 0) {
+          form.append("sampled_filename", trimmedSampledFilename);
+        }
+
+        ({ error: err } = await client.POST(
+          "/api/courses/{course_id}/documents/upload_sample",
+          {
+            params: { path: { course_id: courseId } },
+            body: form as never,
+          },
+        ));
+      } else {
+        ({ error: err } = await client.POST(
+          "/api/courses/{course_id}/documents",
+          {
+            params: { path: { course_id: courseId } },
+            body: form as never,
+          },
+        ));
+      }
 
       if (err) throw new Error("Upload failed");
 
-      setSuccess(`Uploaded ${label} (${formatBytes(file.size)})`);
+      if (uploadMode === "sample") {
+        const range = endPage != null ? `${startPage}-${endPage}` : String(startPage);
+        setSuccess(`Uploaded sampled pages ${range} from ${label} (${formatBytes(file.size)})`);
+      } else {
+        setSuccess(`Uploaded ${label} (${formatBytes(file.size)})`);
+      }
       onUploaded?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");
@@ -142,6 +202,80 @@ export default function FileUpload({
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="rounded-lg border border-gray-200 bg-gray-50 p-1">
+        <div className="grid grid-cols-2 gap-1">
+          <button
+            type="button"
+            onClick={() => setUploadMode("full")}
+            disabled={uploading}
+            className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
+              uploadMode === "full"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Full Upload
+          </button>
+          <button
+            type="button"
+            onClick={() => setUploadMode("sample")}
+            disabled={uploading}
+            className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
+              uploadMode === "sample"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Sample Upload
+          </button>
+        </div>
+      </div>
+
+      {uploadMode === "sample" && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5">
+          <p className="text-[11px] font-medium text-amber-900">
+            Upload sample creates a separate course document.
+          </p>
+          <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-medium text-amber-900">Start page</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={sampleStartPage}
+                onChange={(e) => setSampleStartPage(e.target.value)}
+                disabled={uploading}
+                className="rounded-md border border-amber-200 bg-white px-2 py-1 text-[11px] text-gray-900 focus:border-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+              />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-[10px] font-medium text-amber-900">End page (optional)</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={sampleEndPage}
+                onChange={(e) => setSampleEndPage(e.target.value)}
+                disabled={uploading}
+                className="rounded-md border border-amber-200 bg-white px-2 py-1 text-[11px] text-gray-900 focus:border-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+              />
+            </label>
+            <label className="flex flex-col gap-1 sm:col-span-1">
+              <span className="text-[10px] font-medium text-amber-900">Sampled filename</span>
+              <input
+                type="text"
+                value={sampledFilename}
+                onChange={(e) => setSampledFilename(e.target.value)}
+                disabled={uploading}
+                placeholder="optional"
+                className="rounded-md border border-amber-200 bg-white px-2 py-1 text-[11px] text-gray-900 placeholder:text-gray-400 focus:border-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+              />
+            </label>
+          </div>
+        </div>
+      )}
+
       <div
         className={`flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-6 transition-colors ${
           uploading
@@ -170,7 +304,7 @@ export default function FileUpload({
           disabled={uploading}
           className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
         >
-          Choose File
+          {uploadMode === "sample" ? "Choose Source File" : "Choose File"}
         </button>
       </div>
 

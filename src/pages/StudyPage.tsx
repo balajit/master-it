@@ -32,6 +32,15 @@ const STAR_ICON: ReactNode = (
   </svg>
 );
 
+type Offset = { x: number; y: number };
+type NotesMode = "open" | "closed";
+
+const NOTES_STORAGE_KEY = "study-notes-layout-v2";
+const DEFAULT_NOTES_OFFSETS: Record<NotesMode, Offset> = {
+  open: { x: 0, y: 0 },
+  closed: { x: 0, y: 0 },
+};
+
 /* ------------------------------------------------------------------ */
 /*  Loading skeleton                                                   */
 /* ------------------------------------------------------------------ */
@@ -102,6 +111,7 @@ export default function StudyPage() {
   const [data, setData] = useState<StudyPageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -115,9 +125,40 @@ export default function StudyPage() {
     originX: number;
     originY: number;
   } | null>(null);
-  const [notesOffset, setNotesOffset] = useState({ x: 0, y: 0 });
+  const dragCleanupRef = useRef<(() => void) | null>(null);
+  const notesFloatRef = useRef<HTMLDivElement | null>(null);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [notesOffsets, setNotesOffsets] = useState<Record<NotesMode, Offset>>(DEFAULT_NOTES_OFFSETS);
   const [draggingNotes, setDraggingNotes] = useState(false);
   const [selectionText, setSelectionText] = useState<string>("");
+  const notesMode: NotesMode = notesOpen ? "open" : "closed";
+  const notesOffset = notesOffsets[notesMode];
+
+  const setActiveNotesOffset = useCallback((next: Offset) => {
+    setNotesOffsets((prev) => ({ ...prev, [notesMode]: next }));
+  }, [notesMode]);
+
+  const clampNotesOffset = useCallback((offset: Offset): Offset => {
+    if (typeof window === "undefined") return offset;
+    const node = notesFloatRef.current;
+    if (!node) return offset;
+
+    const rect = node.getBoundingClientRect();
+    const minLeft = 8;
+    const minTop = 72;
+    const maxRight = window.innerWidth - 8;
+    const maxBottom = window.innerHeight - 8;
+
+    let x = offset.x;
+    let y = offset.y;
+
+    if (rect.left < minLeft) x += minLeft - rect.left;
+    if (rect.right > maxRight) x -= rect.right - maxRight;
+    if (rect.top < minTop) y += minTop - rect.top;
+    if (rect.bottom > maxBottom) y -= rect.bottom - maxBottom;
+
+    return { x, y };
+  }, []);
 
   const getScopedSelectionText = useCallback((): string => {
     const scope = lessonSelectionScopeRef.current;
@@ -153,6 +194,7 @@ export default function StudyPage() {
         const result = await getStudyService().getStudyPage(id);
         if (cancelled) return;
         setData(result);
+        setSelectedDocumentId(result.selectedDocumentId ?? result.documents[0]?.documentId ?? null);
         const resume = result.resumeLessonId;
         const firstItem = result.groups[0]?.items[0]?.id ?? null;
         setSelectedId(resume ?? firstItem);
@@ -171,8 +213,34 @@ export default function StudyPage() {
     };
   }, [id, token]);
 
+  const activeDocument = data
+    ? data.documents.find((doc) => doc.documentId === selectedDocumentId) ?? data.documents[0] ?? null
+    : null;
+
+  useEffect(() => {
+    if (!data) return;
+    const selectable = data.documents.filter((doc) => doc.progressItems.length > 0);
+    const current = data.documents.find((doc) => doc.documentId === selectedDocumentId) ?? null;
+    const currentSelectable = !!current && current.progressItems.length > 0;
+    if (!currentSelectable) {
+      setSelectedDocumentId(selectable[0]?.documentId ?? data.documents[0]?.documentId ?? null);
+    }
+  }, [data, selectedDocumentId]);
+
+  useEffect(() => {
+    if (!activeDocument || activeDocument.progressItems.length === 0) return;
+    const resume = activeDocument.resumeLessonId;
+    const firstItem = activeDocument.groups[0]?.items[0]?.id ?? null;
+    setSelectedId((current) => {
+      if (current && (activeDocument.contentMap[current] || activeDocument.lessonDbIdMap[current] !== undefined)) {
+        return current;
+      }
+      return resume ?? firstItem;
+    });
+  }, [activeDocument]);
+
   // ── Notes integration (must be before early returns — hooks order) ──
-  const lessonDbId = data && selectedId != null ? (data.lessonDbIdMap[selectedId] ?? null) : null;
+  const lessonDbId = activeDocument && selectedId != null ? (activeDocument.lessonDbIdMap[selectedId] ?? null) : null;
   const notes = useNotes(lessonDbId);
 
   useEffect(() => {
@@ -192,6 +260,81 @@ export default function StudyPage() {
     };
   }, [getScopedSelectionText]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(NOTES_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as {
+          open?: boolean;
+          offsets?: { open?: Offset; closed?: Offset };
+        };
+        if (parsed.offsets?.open && parsed.offsets?.closed) {
+          setNotesOffsets({
+            open: parsed.offsets.open,
+            closed: parsed.offsets.closed,
+          });
+        }
+        if (typeof parsed.open === "boolean") {
+          setNotesOpen(parsed.open);
+        }
+        return;
+      }
+
+      const legacyRaw = window.localStorage.getItem("study-notes-offset");
+      if (legacyRaw) {
+        const parsedLegacy = JSON.parse(legacyRaw) as { x?: unknown; y?: unknown };
+        if (typeof parsedLegacy.x === "number" && typeof parsedLegacy.y === "number") {
+          setNotesOffsets({
+            open: { x: parsedLegacy.x, y: parsedLegacy.y },
+            closed: DEFAULT_NOTES_OFFSETS.closed,
+          });
+        }
+      }
+    } catch {
+      // noop
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      NOTES_STORAGE_KEY,
+      JSON.stringify({
+        open: notesOpen,
+        offsets: notesOffsets,
+      }),
+    );
+  }, [notesOffsets, notesOpen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || window.innerWidth < 768) return;
+    const id = window.requestAnimationFrame(() => {
+      const clamped = clampNotesOffset(notesOffset);
+      if (clamped.x !== notesOffset.x || clamped.y !== notesOffset.y) {
+        setActiveNotesOffset(clamped);
+      }
+    });
+    return () => {
+      window.cancelAnimationFrame(id);
+    };
+  }, [clampNotesOffset, notesOffset, setActiveNotesOffset]);
+
+  useEffect(() => {
+    function clampOnResize() {
+      if (window.innerWidth < 768) return;
+      const clamped = clampNotesOffset(notesOffset);
+      if (clamped.x !== notesOffset.x || clamped.y !== notesOffset.y) {
+        setActiveNotesOffset(clamped);
+      }
+    }
+
+    window.addEventListener("resize", clampOnResize);
+    return () => {
+      window.removeEventListener("resize", clampOnResize);
+    };
+  }, [clampNotesOffset, notesOffset, setActiveNotesOffset]);
+
   function appendSelectionToNotes() {
     const snippet = selectionText.trim();
     if (!snippet) return;
@@ -206,39 +349,58 @@ export default function StudyPage() {
   }
 
   useEffect(() => {
-    if (!draggingNotes) return;
-
-    function handlePointerMove(event: PointerEvent) {
-      const state = dragStateRef.current;
-      if (!state) return;
-      setNotesOffset({
-        x: state.originX + (event.clientX - state.startX),
-        y: state.originY + (event.clientY - state.startY),
-      });
-    }
-
-    function handlePointerUp() {
-      dragStateRef.current = null;
-      setDraggingNotes(false);
-    }
-
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
-
     return () => {
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
+      dragCleanupRef.current?.();
+      dragCleanupRef.current = null;
     };
-  }, [draggingNotes]);
+  }, []);
 
   function handleNotesDragStart(event: React.PointerEvent<HTMLElement>) {
     if (event.button !== 0) return;
+    event.preventDefault();
+
+    dragCleanupRef.current?.();
+
     dragStateRef.current = {
       startX: event.clientX,
       startY: event.clientY,
       originX: notesOffset.x,
       originY: notesOffset.y,
     };
+
+    const pointerId = event.pointerId;
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      const state = dragStateRef.current;
+      if (!state) return;
+      setActiveNotesOffset({
+        x: state.originX + (moveEvent.clientX - state.startX),
+        y: state.originY + (moveEvent.clientY - state.startY),
+      });
+    };
+
+    const stopDragging = (upEvent: PointerEvent) => {
+      if (upEvent.pointerId !== pointerId) return;
+      dragStateRef.current = null;
+      setDraggingNotes(false);
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", stopDragging);
+      window.removeEventListener("pointercancel", stopDragging);
+      dragCleanupRef.current = null;
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", stopDragging);
+    window.addEventListener("pointercancel", stopDragging);
+
+    dragCleanupRef.current = () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", stopDragging);
+      window.removeEventListener("pointercancel", stopDragging);
+      dragStateRef.current = null;
+      setDraggingNotes(false);
+    };
+
     setDraggingNotes(true);
   }
 
@@ -248,12 +410,16 @@ export default function StudyPage() {
   if (!data)   return null;
 
   // ── Derived data ────────────────────────────────────────────────────
-  const allItems = data.groups.flatMap((g) =>
+  const groups = activeDocument?.groups ?? data.groups;
+  const progressItems = activeDocument?.progressItems ?? data.progressItems;
+  const contentMap = activeDocument?.contentMap ?? data.contentMap;
+
+  const allItems = groups.flatMap((g) =>
     g.items.flatMap((item) => [item, ...(item.children ?? [])]),
   );
 
   const filteredGroups = sidebarSearch.trim()
-    ? data.groups
+    ? groups
         .map((g) => ({
           ...g,
           items: g.items.filter(
@@ -265,13 +431,14 @@ export default function StudyPage() {
           ),
         }))
         .filter((g) => g.items.length > 0)
-    : data.groups;
+    : groups;
 
   const selectedLabel    = allItems.find((i) => i.id === selectedId)?.label ?? "";
   const selectedMilestone =
-    data.groups.find((g) => g.items.some((i) => i.id === selectedId))?.title ?? "";
+    groups.find((g) => g.items.some((i) => i.id === selectedId))?.title ?? "";
 
-  const content = selectedId ? (data.contentMap[selectedId] ?? null) : null;
+  const content = selectedId ? (contentMap[selectedId] ?? null) : null;
+  const activeLessonCount = progressItems.length;
 
   return (
     <div className="grid h-dvh grid-rows-[auto_1fr] bg-gray-50">
@@ -318,7 +485,7 @@ export default function StudyPage() {
             <div className="min-w-0 flex-1">
               <h2 className="text-xs font-semibold text-gray-900">{data.courseTitle}</h2>
               <p className="mt-0.5 text-[11px] text-gray-400">
-                {data.lessonCount} lessons{data.totalMinutes > 0 ? ` · ${formatMinutes(data.totalMinutes)} total` : ""}
+                {activeLessonCount} lessons{data.totalMinutes > 0 ? ` · ${formatMinutes(data.totalMinutes)} total` : ""}
               </p>
             </div>
             <button
@@ -334,6 +501,23 @@ export default function StudyPage() {
           </div>
 
           <div className="shrink-0 border-b border-gray-100 px-3 py-2.5">
+            {data.documents.length > 0 && (
+              <select
+                value={selectedDocumentId ?? ""}
+                onChange={(e) => setSelectedDocumentId(e.target.value || null)}
+                className="mb-2 w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 focus:border-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900"
+              >
+                {data.documents.map((doc) => (
+                  <option
+                    key={doc.documentId}
+                    value={doc.documentId}
+                    disabled={doc.progressItems.length === 0}
+                  >
+                    {doc.documentName}
+                  </option>
+                ))}
+              </select>
+            )}
             <div className="relative">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400">
                 <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clipRule="evenodd" />
@@ -394,13 +578,13 @@ export default function StudyPage() {
                 { label: data.courseTitle, to: `/courses/${id}` },
                 { label: selectedMilestone },
               ]}
-              items={data.progressItems}
+              items={progressItems}
               selectedId={selectedId}
               onSelect={setSelectedId}
               meta={[
                 { label: "MOCK 50 mastery points", icon: STAR_ICON },
                 ...(data.totalMinutes > 0 ? [{ label: formatMinutes(data.totalMinutes) }] : []),
-                { label: `${data.lessonCount} lessons` },
+                { label: `${activeLessonCount} lessons` },
               ]}
             />
 
@@ -410,7 +594,13 @@ export default function StudyPage() {
               </InfoCard>
             )}
 
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+            {activeDocument && activeDocument.progressItems.length === 0 && (
+              <section className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 shadow-sm ring-1 ring-amber-100">
+                This document has no assembled study chapters yet and is not selectable.
+              </section>
+            )}
+
+            <div className="relative">
               <div
                 ref={lessonSelectionScopeRef}
                 className="relative"
@@ -462,27 +652,35 @@ export default function StudyPage() {
               </div>
 
               <div
-                className="lg:sticky lg:top-20 lg:self-start"
-                style={{
-                  transform: `translate(${notesOffset.x}px, ${notesOffset.y}px)`,
-                }}
+                className={`mt-3 md:fixed md:right-8 md:z-40 md:mt-0 ${
+                  notesOpen ? "md:top-24" : "md:top-44"
+                }`}
               >
-                <NotesCard
-                  value={notes.value}
-                  onChange={notes.onChange}
-                  status={notes.status}
-                  selectionText={selectionText}
-                  onAddSelection={appendSelectionToNotes}
-                  onDismissSelection={() => {
-                    setSelectionText("");
-                    window.getSelection()?.removeAllRanges();
+                <div
+                  ref={notesFloatRef}
+                  className={draggingNotes ? "rounded-2xl shadow-2xl ring-2 ring-amber-200" : ""}
+                  style={{
+                    transform: `translate(${notesOffset.x}px, ${notesOffset.y}px)`,
                   }}
-                  dragging={draggingNotes}
-                  onDragStart={(event) => {
-                    if (window.innerWidth < 1024) return;
-                    handleNotesDragStart(event);
-                  }}
-                />
+                >
+                  <NotesCard
+                    value={notes.value}
+                    onChange={notes.onChange}
+                    status={notes.status}
+                    open={notesOpen}
+                    onOpenChange={setNotesOpen}
+                    selectionText={selectionText}
+                    onAddSelection={appendSelectionToNotes}
+                    onDismissSelection={() => {
+                      setSelectionText("");
+                      window.getSelection()?.removeAllRanges();
+                    }}
+                    dragging={draggingNotes}
+                    onDragStart={(event) => {
+                      handleNotesDragStart(event);
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
