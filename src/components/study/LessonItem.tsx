@@ -8,6 +8,8 @@ interface LessonItemProps {
   state?: LessonState;
   duration?: string;
   onClick?: () => void;
+  expanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
   className?: string;
   icon?: React.ReactNode;
   content?: React.ReactNode;
@@ -55,12 +57,22 @@ export default function LessonItem({
   state = "not_started",
   duration,
   onClick,
+  expanded,
+  onExpandedChange,
   className = "",
   icon,
   content,
 }: LessonItemProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [internalExpanded, setInternalExpanded] = useState(false);
   const hasContent = content != null;
+  const isExpanded = expanded ?? internalExpanded;
+
+  function setExpanded(nextValue: boolean) {
+    if (expanded === undefined) {
+      setInternalExpanded(nextValue);
+    }
+    onExpandedChange?.(nextValue);
+  }
 
   return (
     <div className={className}>
@@ -68,7 +80,7 @@ export default function LessonItem({
         type="button"
         onClick={() => {
           if (hasContent) {
-            setExpanded(!expanded);
+            setExpanded(!isExpanded);
           } else {
             onClick?.();
           }
@@ -92,7 +104,7 @@ export default function LessonItem({
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 20 20"
               fill="currentColor"
-              className={`h-4 w-4 text-gray-400 transition-transform ${expanded ? "rotate-90" : ""}`}
+              className={`h-4 w-4 text-gray-400 transition-transform ${isExpanded ? "rotate-90" : ""}`}
             >
               <path fillRule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
             </svg>
@@ -100,7 +112,7 @@ export default function LessonItem({
         </div>
       </button>
 
-      {hasContent && expanded && (
+      {hasContent && isExpanded && (
         <div className="mt-2 rounded-xl border border-gray-100 bg-gray-50/50 px-5 py-4">
           {content}
         </div>

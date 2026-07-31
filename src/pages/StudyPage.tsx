@@ -1,11 +1,10 @@
-import { useState, useEffect, type ReactNode } from "react";
+import { useCallback, useState, useEffect, useRef, type ReactNode } from "react";
 import { useParams, Link } from "react-router";
 import { Button } from "../components/study/ui";
 import SidebarGroup from "../components/study/SidebarGroup";
 import ProgressCard from "../components/study/ProgressCard";
 import InfoCard from "../components/study/InfoCard";
 import LearningCard from "../components/study/LearningCard";
-import LessonItem from "../components/study/LessonItem";
 import PracticeCard from "../components/study/PracticeCard";
 import GoalCard from "../components/study/GoalCard";
 import NotesCard from "../components/study/NotesCard";
@@ -14,6 +13,7 @@ import LessonContent from "../components/study/LessonContent";
 import { getStudyService } from "../services/getStudyService";
 import type { StudyPageData } from "../services/study";
 import { useNotes } from "../hooks/useNotes";
+import { useAuth } from "../hooks/useAuth";
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -59,7 +59,7 @@ function LoadingSkeleton() {
         </aside>
         {/* Main skeleton */}
         <main className="flex-1 overflow-y-auto lg:pl-72">
-          <div className="mx-auto max-w-[1200px] flex flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+          <div className="mx-auto max-w-[1200px] flex flex-col gap-4 px-3 py-4 sm:px-5 sm:py-6 lg:px-6">
             <div className="h-40 animate-pulse rounded-2xl bg-white shadow-sm ring-1 ring-black/5" />
             <div className="h-24 animate-pulse rounded-2xl bg-white shadow-sm ring-1 ring-black/5" />
             <div className="h-64 animate-pulse rounded-2xl bg-white shadow-sm ring-1 ring-black/5" />
@@ -97,6 +97,7 @@ function ErrorState({ message, courseId }: { message: string; courseId: string }
 
 export default function StudyPage() {
   const { id = "" } = useParams<{ id: string }>();
+  const { token } = useAuth();
 
   const [data, setData] = useState<StudyPageData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -106,10 +107,42 @@ export default function StudyPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarSearch, setSidebarSearch] = useState("");
+  const mainScrollRef = useRef<HTMLElement | null>(null);
+  const lessonSelectionScopeRef = useRef<HTMLDivElement | null>(null);
+  const dragStateRef = useRef<{
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+  } | null>(null);
+  const [notesOffset, setNotesOffset] = useState({ x: 0, y: 0 });
+  const [draggingNotes, setDraggingNotes] = useState(false);
+  const [selectionText, setSelectionText] = useState<string>("");
+
+  const getScopedSelectionText = useCallback((): string => {
+    const scope = lessonSelectionScopeRef.current;
+    const selection = window.getSelection();
+    if (!scope || !selection || selection.rangeCount === 0 || selection.isCollapsed) {
+      return "";
+    }
+
+    const range = selection.getRangeAt(0);
+    const candidates: Array<Node | null> = [
+      range.commonAncestorContainer,
+      selection.anchorNode,
+      selection.focusNode,
+    ];
+
+    const insideScope = candidates.some((node) => !!node && scope.contains(node));
+    if (!insideScope) return "";
+
+    const text = selection.toString().replace(/\s+/g, " ").trim();
+    return text;
+  }, []);
 
   // ── Fetch study data ────────────────────────────────────────────────
   useEffect(() => {
-    if (!id) return;
+    if (!id || !token) return;
     let cancelled = false;
 
     async function loadStudyPage() {
@@ -136,11 +169,78 @@ export default function StudyPage() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, token]);
 
   // ── Notes integration (must be before early returns — hooks order) ──
   const lessonDbId = data && selectedId != null ? (data.lessonDbIdMap[selectedId] ?? null) : null;
   const notes = useNotes(lessonDbId);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    mainScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [selectedId]);
+
+  useEffect(() => {
+    function updateSelectionFromDocument() {
+      setSelectionText(getScopedSelectionText());
+    }
+
+    document.addEventListener("selectionchange", updateSelectionFromDocument);
+    return () => {
+      document.removeEventListener("selectionchange", updateSelectionFromDocument);
+    };
+  }, [getScopedSelectionText]);
+
+  function appendSelectionToNotes() {
+    const snippet = selectionText.trim();
+    if (!snippet) return;
+
+    if (!notes.value.includes(snippet)) {
+      const separator = notes.value.trim().length > 0 ? "\n\n" : "";
+      notes.onChange(`${notes.value}${separator}${snippet}`);
+    }
+
+    setSelectionText("");
+    window.getSelection()?.removeAllRanges();
+  }
+
+  useEffect(() => {
+    if (!draggingNotes) return;
+
+    function handlePointerMove(event: PointerEvent) {
+      const state = dragStateRef.current;
+      if (!state) return;
+      setNotesOffset({
+        x: state.originX + (event.clientX - state.startX),
+        y: state.originY + (event.clientY - state.startY),
+      });
+    }
+
+    function handlePointerUp() {
+      dragStateRef.current = null;
+      setDraggingNotes(false);
+    }
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [draggingNotes]);
+
+  function handleNotesDragStart(event: React.PointerEvent<HTMLElement>) {
+    if (event.button !== 0) return;
+    dragStateRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: notesOffset.x,
+      originY: notesOffset.y,
+    };
+    setDraggingNotes(true);
+  }
 
   // ── Loading / error states ──────────────────────────────────────────
   if (loading) return <LoadingSkeleton />;
@@ -271,6 +371,7 @@ export default function StudyPage() {
 
         {/* ── Main content ── */}
         <main
+          ref={mainScrollRef}
           className={`min-h-0 flex-1 overflow-y-auto ${sidebarCollapsed ? "lg:pl-0" : "lg:pl-72"}`}
         >
           <div className="mx-auto max-w-[1200px] flex flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
@@ -292,7 +393,6 @@ export default function StudyPage() {
               breadcrumbSegments={[
                 { label: data.courseTitle, to: `/courses/${id}` },
                 { label: selectedMilestone },
-                { label: selectedLabel },
               ]}
               items={data.progressItems}
               selectedId={selectedId}
@@ -310,63 +410,81 @@ export default function StudyPage() {
               </InfoCard>
             )}
 
-            <NotesCard
-              value={notes.value}
-              onChange={notes.onChange}
-              status={notes.status}
-            />
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+              <div
+                ref={lessonSelectionScopeRef}
+                className="relative"
+                onMouseUp={() => {
+                  window.setTimeout(() => {
+                    setSelectionText(getScopedSelectionText());
+                  }, 0);
+                }}
+                onKeyUp={() => {
+                  setSelectionText(getScopedSelectionText());
+                }}
+              >
+                {content?.learning && (
+                  <LearningCard
+                    title={content.learning.title}
+                    estimatedTime={content.learning.estimatedTime}
+                    learningItems={content.learning.lessons.map((l) => ({
+                      title: l.title,
+                      description: l.description,
+                      state: l.state,
+                      duration: l.duration,
+                      content:
+                        l.content && l.content.length > 0 ? (
+                          <ContentCard subtitle={l.duration}>
+                            <LessonContent items={l.content} />
+                          </ContentCard>
+                        ) : undefined,
+                    }))}
+                    practiceItems={content.learning.practices.map((p) => ({
+                      title: p.title,
+                      description: p.description,
+                      state: p.state,
+                      duration: p.duration,
+                      content:
+                        p.content && p.content.length > 0 ? (
+                          <ContentCard subtitle={p.duration}>
+                            <LessonContent items={p.content} />
+                          </ContentCard>
+                        ) : undefined,
+                    }))}
+                    practiceContent={
+                      content.learning.practices.length === 0 ? (
+                        <p className="text-xs text-gray-400">No practice activities yet.</p>
+                      ) : null
+                    }
+                  />
+                )}
 
-            {content?.learning && (
-              <LearningCard
-                title={content.learning.title}
-                estimatedTime={content.learning.estimatedTime}
-                learningContent={
-                  <>
-                    {content.learning.lessons.map((l) => (
-                      <LessonItem
-                        key={l.title}
-                        title={l.title}
-                        description={l.description}
-                        state={l.state}
-                        duration={l.duration}
-                        content={
-                          l.content && l.content.length > 0 ? (
-                            <ContentCard subtitle={l.duration}>
-                              <LessonContent items={l.content} />
-                            </ContentCard>
-                          ) : undefined
-                        }
-                        onClick={() => {}}
-                      />
-                    ))}
-                  </>
-                }
-                practiceContent={
-                  <>
-                    {content.learning.practices.map((p) => (
-                      <LessonItem
-                        key={p.title}
-                        title={p.title}
-                        description={p.description}
-                        state={p.state}
-                        duration={p.duration}
-                        content={
-                          p.content && p.content.length > 0 ? (
-                            <ContentCard subtitle={p.duration}>
-                              <LessonContent items={p.content} />
-                            </ContentCard>
-                          ) : undefined
-                        }
-                        onClick={() => {}}
-                      />
-                    ))}
-                    {content.learning.practices.length === 0 && (
-                      <p className="text-xs text-gray-400">MOCK No practice activities yet.</p>
-                    )}
-                  </>
-                }
-              />
-            )}
+              </div>
+
+              <div
+                className="lg:sticky lg:top-20 lg:self-start"
+                style={{
+                  transform: `translate(${notesOffset.x}px, ${notesOffset.y}px)`,
+                }}
+              >
+                <NotesCard
+                  value={notes.value}
+                  onChange={notes.onChange}
+                  status={notes.status}
+                  selectionText={selectionText}
+                  onAddSelection={appendSelectionToNotes}
+                  onDismissSelection={() => {
+                    setSelectionText("");
+                    window.getSelection()?.removeAllRanges();
+                  }}
+                  dragging={draggingNotes}
+                  onDragStart={(event) => {
+                    if (window.innerWidth < 1024) return;
+                    handleNotesDragStart(event);
+                  }}
+                />
+              </div>
+            </div>
 
             {content?.goal && (
               <GoalCard

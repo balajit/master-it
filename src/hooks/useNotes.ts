@@ -59,6 +59,8 @@ export function useNotes(lessonDbId: number | null): UseNotesResult {
 
     if (lessonDbId == null) {
       noteIdRef.current = null;
+      setValue("");
+      setStatus("idle");
       return;
     }
 
@@ -118,7 +120,7 @@ export function useNotes(lessonDbId: number | null): UseNotesResult {
   );
 
   return {
-    value: lessonDbId == null ? "" : value,
+    value,
     onChange,
     status: lessonDbId == null ? "idle" : status,
   };

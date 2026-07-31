@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Card from "./ui/Card";
 import Breadcrumb from "./ui/Breadcrumb";
 import ProgressCells from "./ui/ProgressCells";
@@ -28,16 +29,18 @@ export default function ProgressCard({
   meta,
   className,
 }: ProgressCardProps) {
+  const [expanded, setExpanded] = useState(false);
+
   return (
-    <Card padding="lg" className={className}>
+    <Card padding="sm" className={className}>
       <Breadcrumb segments={breadcrumbSegments} />
 
-      <h1 className="mt-4 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+      <h1 className="mt-1.5 text-sm font-semibold tracking-tight text-gray-900 sm:text-base">
         {title}
       </h1>
 
       {meta && meta.length > 0 && (
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-500">
           {meta.map((m, i) => (
             <span key={i} className="flex items-center gap-1.5">
               {m.icon}
@@ -51,16 +54,54 @@ export default function ProgressCard({
         </div>
       )}
 
-      <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
-        {STATUS_ALL_KEYS.map((key) => (
-          <div key={key} className="flex items-center gap-1.5">
-            <span className={`inline-block h-2.5 w-2.5 rounded-sm ${STATUS_CONFIG[key].color}`} />
-            <span className="text-xs font-medium text-gray-600">{STATUS_CONFIG[key].label}</span>
-          </div>
-        ))}
-      </div>
+      {!expanded && (
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <ProgressCells
+            items={items}
+            selectedId={selectedId}
+            onSelect={onSelect}
+            singleRow
+            maxVisible={10}
+            className="min-w-0 flex-1"
+          />
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="shrink-0 rounded-md border border-gray-200 bg-white px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700"
+          >
+            More
+          </button>
+        </div>
+      )}
 
-      <ProgressCells items={items} selectedId={selectedId} onSelect={onSelect} className="mt-4" />
+      {expanded && (
+        <>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              {STATUS_ALL_KEYS.map((key) => (
+                <div key={key} className="flex items-center gap-1.5">
+                  <span className={`inline-block h-2 w-2 rounded-sm ${STATUS_CONFIG[key].color}`} />
+                  <span className="text-[10px] font-medium text-gray-600">{STATUS_CONFIG[key].label}</span>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setExpanded(false)}
+              className="shrink-0 rounded-md border border-gray-200 bg-white px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700"
+            >
+              Less
+            </button>
+          </div>
+
+          <ProgressCells
+            items={items}
+            selectedId={selectedId}
+            onSelect={onSelect}
+            className="mt-2"
+          />
+        </>
+      )}
     </Card>
   );
 }

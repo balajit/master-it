@@ -16,10 +16,11 @@ let _instance: StudyService | null = null;
 
 export function getStudyService(): StudyService {
   if (!_instance) {
-    _instance =
-      import.meta.env.VITE_USE_MOCK_STUDY === "true"
-        ? new MockStudyService()
-        : new ApiStudyService();
+    if (import.meta.env.VITE_USE_MOCK_STUDY === "true") {
+      _instance = new MockStudyService();
+    } else {
+      _instance = new ApiStudyService();
+    }
   }
   return _instance;
 }

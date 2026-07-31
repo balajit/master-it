@@ -335,33 +335,48 @@ export default function CourseDetailPage() {
                           {formatBytes(doc.size_bytes)}
                         </p>
                       </div>
-                      {isInFlight(doc.id) ||
-                      isProcessingStatus(statusByDocId[doc.id]?.status) ? (
-                        <span className="shrink-0 text-xs text-gray-400">
-                          Processing...
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => openDocumentProcessing(doc)}
-                          className="shrink-0 rounded-full p-1 text-gray-400 transition-colors hover:bg-amber-50 hover:text-amber-600"
-                          title="Process document"
-                          aria-label="Process document"
+                      <button
+                        type="button"
+                        onClick={() => openDocumentProcessing(doc)}
+                        className={`relative shrink-0 rounded-full p-1 transition-colors hover:bg-amber-50 ${
+                          isInFlight(doc.id) ||
+                          isProcessingStatus(statusByDocId[doc.id]?.status)
+                            ? "text-emerald-600"
+                            : "text-gray-400 hover:text-amber-600"
+                        }`}
+                        title={
+                          isInFlight(doc.id) ||
+                          isProcessingStatus(statusByDocId[doc.id]?.status)
+                            ? "View processing status"
+                            : "Process document"
+                        }
+                        aria-label={
+                          isInFlight(doc.id) ||
+                          isProcessingStatus(statusByDocId[doc.id]?.status)
+                            ? "View processing status"
+                            : "Process document"
+                        }
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          className="h-4 w-4"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                            className="h-4 w-4"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M10 1a.75.75 0 0 1 .75.75v2.212l1.354-.781a.75.75 0 0 1 .75 1.299L10.5 5.76v1.49l2.354-1.358a.75.75 0 0 1 .75 1.299L11.25 8.5v1.25a.75.75 0 0 1-1.5 0V8.5l-2.354 1.358a.75.75 0 0 1-.75-1.299L8.75 7.25V5.76L6.396 7.118a.75.75 0 0 1-.75-1.299L7 5.962V3.75a.75.75 0 0 1 .75-.75H8.5v-.75A.75.75 0 0 1 9.25 1h.75Zm-.466 11.79a.75.75 0 0 1 .932 0l3.75 3a.75.75 0 0 1-.932 1.17L10 14.31l-3.534 2.65a.75.75 0 0 1-.932-1.17l3.75-3Z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </button>
-                      )}
+                          <path
+                            fillRule="evenodd"
+                            d="M10 1a.75.75 0 0 1 .75.75v2.212l1.354-.781a.75.75 0 0 1 .75 1.299L10.5 5.76v1.49l2.354-1.358a.75.75 0 0 1 .75 1.299L11.25 8.5v1.25a.75.75 0 0 1-1.5 0V8.5l-2.354 1.358a.75.75 0 0 1-.75-1.299L8.75 7.25V5.76L6.396 7.118a.75.75 0 0 1-.75-1.299L7 5.962V3.75a.75.75 0 0 1 .75-.75H8.5v-.75A.75.75 0 0 1 9.25 1h.75Zm-.466 11.79a.75.75 0 0 1 .932 0l3.75 3a.75.75 0 0 1-.932 1.17L10 14.31l-3.534 2.65a.75.75 0 0 1-.932-1.17l3.75-3Z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        {(isInFlight(doc.id) ||
+                          isProcessingStatus(statusByDocId[doc.id]?.status)) && (
+                          <span className="absolute -right-1 -top-1 inline-flex h-2.5 w-2.5">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-70" />
+                            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                          </span>
+                        )}
+                      </button>
                     </li>
                   ))}
                 </ul>

@@ -8,6 +8,7 @@ import type {
 } from "./study";
 import type { ContentItem } from "../types/contentNode";
 import type { LessonStatus } from "../components/study/statusConfig";
+import { ApiStudyService } from "./studyApi";
 
 const MOCK_LESSON_ITEMS: ContentItem[] = [
   {
@@ -87,32 +88,73 @@ function makeContent(id: string): StudyContent {
   };
 }
 
+function buildMockStudyPage(courseId: string): StudyPageData {
+  const allIds = MOCK_GROUPS.flatMap((g) =>
+    g.items.flatMap((i) => [i, ...(i.children ?? [])]),
+  ).map((i) => i.id);
+
+  const progressItems = allIds.map((id) => ({
+    id,
+    label: MOCK_GROUPS.flatMap((g) => g.items).find((i) => i.id === id)?.label ?? id,
+    status: (MOCK_STATUSES[id] ?? "not_started") as StudyProgressItem["status"],
+  }));
+
+  const contentMap: Record<string, StudyContent> = {};
+  for (const id of allIds) {
+    contentMap[id] = makeContent(id);
+  }
+
+  return {
+    courseTitle: `Sample Course ${courseId}`,
+    lessonCount: allIds.length,
+    totalMinutes: 0,
+    groups: MOCK_GROUPS,
+    progressItems,
+    contentMap,
+    lessonDbIdMap: {},
+    resumeLessonId: allIds[0] ?? null,
+  };
+}
+
+function extractAllIds(data: StudyPageData): string[] {
+  return data.groups
+    .flatMap((g) => g.items.flatMap((i) => [i, ...(i.children ?? [])]))
+    .map((i) => i.id);
+}
+
 export class MockStudyService implements StudyService {
+  private readonly api = new ApiStudyService();
+
   async getStudyPage(courseId: string): Promise<StudyPageData> {
-    const allIds = MOCK_GROUPS.flatMap((g) =>
-      g.items.flatMap((i) => [i, ...(i.children ?? [])]),
-    ).map((i) => i.id);
+    const mock = buildMockStudyPage(courseId);
 
-    const progressItems = allIds.map((id) => ({
-      id,
-      label: MOCK_GROUPS.flatMap((g) => g.items).find((i) => i.id === id)?.label ?? id,
-      status: (MOCK_STATUSES[id] ?? "not_started") as StudyProgressItem["status"],
-    }));
+    try {
+      const apiData = await this.api.getStudyPage(courseId);
+      const allIds = extractAllIds(apiData);
+      const mergedContentMap: Record<string, StudyContent> = { ...apiData.contentMap };
+      for (const id of allIds) {
+        if (!mergedContentMap[id]) {
+          mergedContentMap[id] = makeContent(id);
+        }
+      }
 
-    const contentMap: Record<string, StudyContent> = {};
-    for (const id of allIds) {
-      contentMap[id] = makeContent(id);
+      return {
+        courseTitle: apiData.courseTitle?.trim().length
+          ? apiData.courseTitle
+          : mock.courseTitle,
+        lessonCount: apiData.lessonCount > 0 ? apiData.lessonCount : allIds.length,
+        totalMinutes: apiData.totalMinutes,
+        groups: apiData.groups,
+        progressItems: apiData.progressItems,
+        contentMap: mergedContentMap,
+        lessonDbIdMap: apiData.lessonDbIdMap,
+        resumeLessonId:
+          apiData.resumeLessonId ??
+          allIds[0] ??
+          mock.resumeLessonId,
+      };
+    } catch {
+      return mock;
     }
-
-    return {
-      courseTitle: `Sample Course ${courseId}`,
-      lessonCount: allIds.length,
-      totalMinutes: 0,
-      groups: MOCK_GROUPS,
-      progressItems,
-      contentMap,
-      lessonDbIdMap: {},
-      resumeLessonId: allIds[0] ?? null,
-    };
   }
 }

@@ -6,6 +6,11 @@ interface NotesCardProps {
   value:     string;
   onChange:  (text: string) => void;
   status?:   NoteStatus;
+  dragging?: boolean;
+  onDragStart?: (event: React.PointerEvent<HTMLDivElement>) => void;
+  selectionText?: string;
+  onAddSelection?: () => void;
+  onDismissSelection?: () => void;
   className?: string;
 }
 
@@ -84,7 +89,17 @@ function SaveStatus({ status }: { status: NoteStatus }) {
   );
 }
 
-export default function NotesCard({ value, onChange, status = "idle", className = "" }: NotesCardProps) {
+export default function NotesCard({
+  value,
+  onChange,
+  status = "idle",
+  dragging = false,
+  onDragStart,
+  selectionText = "",
+  onAddSelection,
+  onDismissSelection,
+  className = "",
+}: NotesCardProps) {
   const [open, setOpen] = useState(false);
   const [maximized, setMaximized] = useState(false);
 
@@ -106,7 +121,7 @@ export default function NotesCard({ value, onChange, status = "idle", className 
 
   // Expanded (post-it or maximized)
   const textareaHeight = maximized ? "flex-1" : "h-44";
-  const cardHeight = maximized ? "flex flex-col" : "w-80";
+  const cardHeight = maximized ? "flex flex-col" : "w-76";
 
   return (
     <div
@@ -118,15 +133,25 @@ export default function NotesCard({ value, onChange, status = "idle", className 
         className={`${cardHeight} bg-amber-50 shadow-md ${maximized ? "min-h-[70vh]" : ""}`}
       >
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-amber-200 px-4 py-2.5">
-          <div className="flex items-center gap-1.5 text-amber-700">
+        <div className="flex shrink-0 items-center justify-between border-b border-amber-200 px-3 py-2">
+          <div
+            className={`flex items-center gap-1.5 text-amber-700 ${onDragStart ? "cursor-grab active:cursor-grabbing" : ""}`}
+            onPointerDown={(event) => onDragStart?.(event)}
+            title={onDragStart ? "Drag notes" : undefined}
+          >
             {PENCIL_ICON}
             <span className="text-xs font-semibold uppercase tracking-wider">Notes</span>
+            {dragging && (
+              <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+                Moving
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => setMaximized(!maximized)}
+              onPointerDown={(event) => event.stopPropagation()}
               title={maximized ? "Restore" : "Maximize"}
               className="rounded p-1 text-amber-500 transition-colors hover:bg-amber-100 hover:text-amber-700"
             >
@@ -135,6 +160,7 @@ export default function NotesCard({ value, onChange, status = "idle", className 
             <button
               type="button"
               onClick={() => { setOpen(false); setMaximized(false); }}
+              onPointerDown={(event) => event.stopPropagation()}
               title="Close notes"
               className="rounded p-1 text-amber-500 transition-colors hover:bg-amber-100 hover:text-amber-700"
             >
@@ -144,12 +170,32 @@ export default function NotesCard({ value, onChange, status = "idle", className 
         </div>
 
         {/* Textarea */}
-        <div className={`flex ${maximized ? "flex-1" : ""} flex-col px-4 py-3`}>
+        <div className={`flex ${maximized ? "flex-1" : ""} flex-col px-3 py-2.5`}>
+          {selectionText && (
+            <div className="mb-2 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-100/70 px-2 py-1.5">
+              <p className="line-clamp-1 text-[11px] text-amber-900">{selectionText}</p>
+              <button
+                type="button"
+                onClick={onAddSelection}
+                className="shrink-0 rounded-md bg-amber-600 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white hover:bg-amber-700"
+              >
+                Add to notes
+              </button>
+              <button
+                type="button"
+                onClick={onDismissSelection}
+                className="shrink-0 rounded-md border border-amber-300 px-1.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-700 hover:bg-amber-100"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Jot down notes or work through calculations…"
-            className={`w-full ${textareaHeight} resize-none rounded-lg border border-amber-200 bg-white/70 px-3 py-2.5 text-sm leading-relaxed text-gray-800 placeholder:text-amber-300 focus:border-amber-300 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-1 overflow-y-auto`}
+            placeholder="Take notes"
+            className={`w-full ${textareaHeight} resize-none rounded-lg border border-amber-200 bg-white/70 px-2.5 py-2 text-sm leading-relaxed text-gray-800 placeholder:text-gray-400 focus:border-amber-300 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-1 overflow-y-auto`}
           />
           <div className="mt-1.5 flex items-center justify-between">
             <SaveStatus status={status} />

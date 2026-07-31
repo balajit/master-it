@@ -58,10 +58,15 @@ function formatFieldLabel(key: string): string {
 function formatValue(value: unknown): string {
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (value === null || value === undefined) return "-";
-  if (typeof value === "object") {
-    return JSON.stringify(value, null, 2);
-  }
   return String(value);
+}
+
+function isDisplayScalar(value: unknown): value is string | number | boolean {
+  return (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  );
 }
 
 function compactPairs(
@@ -73,6 +78,7 @@ function compactPairs(
         key !== "book_pipeline" &&
         key !== "process_runs",
     )
+    .filter(([, value]) => isDisplayScalar(value))
     .map(([key, value]) => ({
       label: formatFieldLabel(key),
       value: formatValue(value),
@@ -121,6 +127,13 @@ export default function DocumentProcessingModal({
     updated_at: run.updated_at,
     stages: run.stages ?? [],
   }));
+  const currentRun = runs.length > 0 ? runs[runs.length - 1] : null;
+  const previousRuns =
+    runs.length > 1 ? [...runs.slice(0, runs.length - 1)].reverse() : [];
+  const isLive =
+    isProcessingStatus(status) ||
+    isProcessingStatus(currentRun?.status) ||
+    isProcessingStatus(bookPipeline?.status);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -210,6 +223,11 @@ export default function DocumentProcessingModal({
             >
               {status.replace(/_/g, " ")}
             </span>
+            {isLive && (
+              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                Live
+              </span>
+            )}
             {isLoading && <span className="text-xs text-gray-500">Updating...</span>}
             {runs.length > 0 && (
               <span className="text-xs text-gray-500">
@@ -257,11 +275,122 @@ export default function DocumentProcessingModal({
                 </div>
               )}
 
-              {runs.length > 0 && (
+              {currentRun && (
                 <div>
-                  <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-700">Process Runs</h4>
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-700">
+                    Current Process
+                  </h4>
                   <ul className="mt-1.5 space-y-1.5">
-                    {runs.map((run) => (
+                    <li
+                      key={currentRun.process_id}
+                      className="rounded-md border border-gray-200 bg-gray-50"
+                    >
+                      <details
+                        open={openRuns[currentRun.process_id] ?? false}
+                        onToggle={(event) => {
+                          const target = event.currentTarget as HTMLDetailsElement;
+                          setOpenRuns((prev) => ({
+                            ...prev,
+                            [currentRun.process_id]: target.open,
+                          }));
+                        }}
+                      >
+                          <summary className="cursor-pointer list-none px-2.5 py-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <p className="text-xs font-medium text-gray-900">
+                                  #{currentRun.process_id} {currentRun.run_mode}
+                                </p>
+                                {isLive && (
+                                  <span className="rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                                    Live
+                                  </span>
+                                )}
+                              </div>
+                              <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${statusPillClass(currentRun.status)}`}>
+                                {currentRun.status}
+                              </span>
+                            </div>
+                          <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-gray-600">
+                            <span>Retries {currentRun.retry_count}/{currentRun.max_retries}</span>
+                            <span>Updated {formatDateTime(currentRun.updated_at)}</span>
+                          </div>
+                        </summary>
+
+                        <div className="border-t border-gray-200 px-2.5 py-2">
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-600">
+                            <span>Created {formatDateTime(currentRun.created_at)}</span>
+                            <span>Updated {formatDateTime(currentRun.updated_at)}</span>
+                          </div>
+                          {currentRun.error_message && (
+                            <p className="mt-1 text-[11px] text-red-700">{currentRun.error_message}</p>
+                          )}
+                          {currentRun.stages.length > 0 && (
+                            <ul className="mt-1.5 space-y-1">
+                              {currentRun.stages.map((stage, index) => {
+                                const key = stageKey(currentRun.process_id, stage, index);
+                                return (
+                                  <li
+                                    key={key}
+                                    className="rounded-md border border-gray-200 bg-white"
+                                  >
+                                    <details
+                                      open={openStages[key] ?? false}
+                                      onToggle={(event) => {
+                                        const target =
+                                          event.currentTarget as HTMLDetailsElement;
+                                        setOpenStages((prev) => ({
+                                          ...prev,
+                                          [key]: target.open,
+                                        }));
+                                      }}
+                                    >
+                                      <summary className="cursor-pointer list-none px-2 py-1.5">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                          <p className="text-[11px] font-medium text-gray-900">
+                                            {stage.stage}
+                                          </p>
+                                          <span
+                                            className={`rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${statusPillClass(stage.result)}`}
+                                          >
+                                            {stage.result}
+                                          </span>
+                                        </div>
+                                        <p className="mt-0.5 text-[10px] text-gray-500">
+                                          {formatDateTime(stage.created_at)}
+                                        </p>
+                                      </summary>
+                                      <div className="border-t border-gray-200 px-2 py-1.5">
+                                        {stage.output ? (
+                                          <pre className="whitespace-pre-wrap break-words rounded-md bg-gray-50 p-1.5 text-[10px] text-gray-700">
+                                            {stage.output}
+                                          </pre>
+                                        ) : (
+                                          <p className="text-[10px] text-gray-500">
+                                            No output
+                                          </p>
+                                        )}
+                                      </div>
+                                    </details>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </div>
+                      </details>
+                    </li>
+                  </ul>
+                </div>
+              )}
+
+              {previousRuns.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-700">
+                    Previous Processes
+                  </h4>
+                  <ul className="mt-1.5 space-y-1.5">
+                    {previousRuns.map((run) => (
                       <li key={run.process_id} className="rounded-md border border-gray-200 bg-gray-50">
                         <details
                           open={openRuns[run.process_id] ?? false}
