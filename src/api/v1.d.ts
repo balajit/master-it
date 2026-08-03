@@ -1260,6 +1260,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/triage/diagnoses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Diagnosis Endpoint */
+        post: operations["create_diagnosis_endpoint_api_v1_triage_diagnoses_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/triage/diagnoses/{diagnosis_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Diagnosis Endpoint */
+        get: operations["get_diagnosis_endpoint_api_v1_triage_diagnoses__diagnosis_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/triage/diagnoses/{diagnosis_id}/findings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Diagnosis Findings Endpoint */
+        get: operations["get_diagnosis_findings_endpoint_api_v1_triage_diagnoses__diagnosis_id__findings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/triage/diagnoses/{diagnosis_id}/actions/delete-document-process-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Delete Document Process Runs Endpoint */
+        post: operations["delete_document_process_runs_endpoint_api_v1_triage_diagnoses__diagnosis_id__actions_delete_document_process_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/triage/diagnoses/{diagnosis_id}/actions/{action_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Delete Action Endpoint */
+        post: operations["cancel_delete_action_endpoint_api_v1_triage_diagnoses__diagnosis_id__actions__action_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/triage/diagnoses/{diagnosis_id}/actions/{action_id}/rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rollback Delete Action Endpoint */
+        post: operations["rollback_delete_action_endpoint_api_v1_triage_diagnoses__diagnosis_id__actions__action_id__rollback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -1302,6 +1404,43 @@ export interface components {
         AssignRole: {
             /** Role Name */
             role_name: string;
+        };
+        /** BaseItemMetadata */
+        BaseItemMetadata: {
+            /** Label */
+            label?: string | null;
+            /** Docling Parent Ref */
+            docling_parent_ref?: string | null;
+            /** Layout Line Id */
+            layout_line_id?: string | null;
+            /** Layout Block Index */
+            layout_block_index?: number | null;
+            /** Layout Line Index */
+            layout_line_index?: number | null;
+            /** Layout Span Count */
+            layout_span_count?: number | null;
+            /** Layout Origin */
+            layout_origin?: string | null;
+            /** Semantic Origin */
+            semantic_origin?: string | null;
+            /** Relation Method */
+            relation_method?: string | null;
+            /** Relation Confidence */
+            relation_confidence?: number | null;
+            /** Question Group Id */
+            question_group_id?: string | null;
+            /** Sequence Index */
+            sequence_index?: number | null;
+            /** Resolved Section Heading */
+            resolved_section_heading?: string | null;
+            /** Resolved Parent Ref */
+            resolved_parent_ref?: string | null;
+            /** Semantic Node Type */
+            semantic_node_type?: string | null;
+            /** Semantic Match Score */
+            semantic_match_score?: number | null;
+            /** Display Hint */
+            display_hint?: string | null;
         };
         /** BlockStyleMetadata */
         BlockStyleMetadata: {
@@ -1408,6 +1547,27 @@ export interface components {
             title: string;
             /** Runs */
             runs?: (components["schemas"]["PlainRun"] | components["schemas"]["EqRun"] | components["schemas"]["BoldRun"] | components["schemas"]["ItalicRun"] | components["schemas"]["CodeRun"] | components["schemas"]["LinkRun"])[];
+        };
+        /** CancelDeleteActionRequest */
+        CancelDeleteActionRequest: {
+            /** Reason */
+            reason: string;
+        };
+        /** CancelDeleteActionResponse */
+        CancelDeleteActionResponse: {
+            /** Diagnosis Id */
+            diagnosis_id: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "canceled" | "already_canceled";
+            /** Action Id */
+            action_id: string;
+            /** Action Type */
+            action_type: string;
+            /** Canceled At */
+            canceled_at?: string | null;
         };
         /**
          * CardStatus
@@ -1519,6 +1679,8 @@ export interface components {
             semantic_node_type?: string | null;
             /** Semantic Match Score */
             semantic_match_score?: number | null;
+            /** Display Hint */
+            display_hint?: string | null;
             /**
              * Filename
              * @default
@@ -1641,6 +1803,126 @@ export interface components {
             term: string;
             /** Definition */
             definition: string;
+        };
+        /** DeleteActionPreview */
+        DeleteActionPreview: {
+            /** Requested Ids */
+            requested_ids?: number[];
+            /** Target Process Ids */
+            target_process_ids?: number[];
+            /** Missing Process Ids */
+            missing_process_ids?: number[];
+            /** Affected Row Count */
+            affected_row_count: number;
+            /** Affected File Count */
+            affected_file_count: number;
+            /** Integrity Hash */
+            integrity_hash: string;
+        };
+        /** DeleteDocumentProcessRunsRequest */
+        DeleteDocumentProcessRunsRequest: {
+            /** Process Ids */
+            process_ids?: number[] | null;
+            /** Reason */
+            reason: string;
+            /**
+             * Confirm
+             * @default false
+             */
+            confirm: boolean;
+            /** Action Id */
+            action_id?: string | null;
+        };
+        /** DeleteDocumentProcessRunsResponse */
+        DeleteDocumentProcessRunsResponse: {
+            /** Diagnosis Id */
+            diagnosis_id: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "confirmation_required" | "applied" | "already_applied";
+            /** Action Id */
+            action_id: string;
+            /** Action Type */
+            action_type: string;
+            /** Precheck Passed */
+            precheck_passed?: boolean | null;
+            preview?: components["schemas"]["DeleteActionPreview"] | null;
+            /** Deleted Process Ids */
+            deleted_process_ids?: number[];
+            /** Missing Process Ids */
+            missing_process_ids?: number[];
+            /** Deleted Pipeline Log Count */
+            deleted_pipeline_log_count?: number | null;
+            /** Affected Row Count */
+            affected_row_count?: number | null;
+            /** Affected File Count */
+            affected_file_count?: number | null;
+            /** Applied At */
+            applied_at?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
+            /** Message */
+            message?: string | null;
+        };
+        /** DiagnosisFindingRead */
+        DiagnosisFindingRead: {
+            /** Id */
+            id: number;
+            /** Diagnosis Id */
+            diagnosis_id: number;
+            /** Rule Id */
+            rule_id: string;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "warning" | "error";
+            /** Table Name */
+            table_name: string;
+            /** Message */
+            message: string;
+            /** Affected Count */
+            affected_count: number;
+            /** Sample */
+            sample?: {
+                [key: string]: unknown;
+            };
+        };
+        /** DiagnosisRequest */
+        DiagnosisRequest: {
+            /** Document Id */
+            document_id: string;
+        };
+        /** DiagnosisRunRead */
+        DiagnosisRunRead: {
+            /** Diagnosis Id */
+            diagnosis_id: number;
+            /** Document Id */
+            document_id?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "completed" | "failed";
+            /** Verdict */
+            verdict?: ("pass" | "warn" | "fail") | null;
+            /** Report Id */
+            report_id?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Completed At */
+            completed_at?: string | null;
+            /** Summary */
+            summary?: {
+                [key: string]: unknown;
+            };
+            /** Missing Entry Tables */
+            missing_entry_tables?: components["schemas"]["MissingEntryTableRead"][];
         };
         /**
          * DifficultyLevel
@@ -1983,6 +2265,8 @@ export interface components {
             semantic_node_type?: string | null;
             /** Semantic Match Score */
             semantic_match_score?: number | null;
+            /** Display Hint */
+            display_hint?: string | null;
             /** Is Block */
             is_block?: boolean | null;
             /** Has Mathml */
@@ -2191,6 +2475,52 @@ export interface components {
              */
             background_color: string;
         };
+        /** FormAreaItem */
+        FormAreaItem: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "form_area";
+            /** Id */
+            id: string;
+            /**
+             * Order
+             * @default 0
+             */
+            order: number;
+            /** Items */
+            items?: string[];
+            /** Bbox */
+            bbox?: {
+                [key: string]: number;
+            } | null;
+            style?: components["schemas"]["BlockStyleMetadata"] | null;
+            metadata?: components["schemas"]["BaseItemMetadata"];
+        };
+        /**
+         * FormAreaNode
+         * @description A form area containing interactive content like word banks or answer boxes.
+         *
+         *     Children are ``TextItemNode`` elements representing individual selectable
+         *     or fillable items within the form area.
+         *
+         *     The ``display_hint`` field provides rendering guidance:
+         *     - ``"word_bank"``: horizontal layout of selectable items
+         *     - ``"answer_box"``: bordered input region
+         *     - ``None``: default form area rendering
+         */
+        FormAreaNode: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "form_area";
+            /** Items */
+            items?: components["schemas"]["TextItemNode"][];
+            /** Display Hint */
+            display_hint?: ("word_bank" | "answer_box") | null;
+        };
         /**
          * GoalCardPlacementStrategy
          * @description Where goal cards (milestones/checkpoints) appear.
@@ -2335,6 +2665,8 @@ export interface components {
             semantic_node_type?: string | null;
             /** Semantic Match Score */
             semantic_match_score?: number | null;
+            /** Display Hint */
+            display_hint?: string | null;
             /** Number */
             number?: string | null;
             /** Heading Level */
@@ -2428,6 +2760,8 @@ export interface components {
             semantic_node_type?: string | null;
             /** Semantic Match Score */
             semantic_match_score?: number | null;
+            /** Display Hint */
+            display_hint?: string | null;
             /**
              * Image Uri
              * @default
@@ -2588,7 +2922,7 @@ export interface components {
             /** Equations */
             equations?: components["schemas"]["NodeRefSchema"][];
             /** Content */
-            content?: (components["schemas"]["HeadingNode"] | components["schemas"]["ParagraphNode"] | components["schemas"]["ListNode"] | components["schemas"]["EquationNode"] | components["schemas"]["CodeBlockNode"] | components["schemas"]["TableNode"] | components["schemas"]["NoteNode"] | components["schemas"]["CalloutNode"] | components["schemas"]["DefinitionNode"] | components["schemas"]["FigureNode"])[];
+            content?: (components["schemas"]["HeadingNode"] | components["schemas"]["ParagraphNode"] | components["schemas"]["TextItemNode"] | components["schemas"]["ListNode"] | components["schemas"]["FormAreaNode"] | components["schemas"]["EquationNode"] | components["schemas"]["CodeBlockNode"] | components["schemas"]["TableNode"] | components["schemas"]["NoteNode"] | components["schemas"]["CalloutNode"] | components["schemas"]["DefinitionNode"] | components["schemas"]["FigureNode"])[];
         };
         /**
          * LessonConfigSchema
@@ -2696,7 +3030,7 @@ export interface components {
              * Content
              * @default []
              */
-            content: (components["schemas"]["HeadingNode"] | components["schemas"]["ParagraphNode"] | components["schemas"]["ListNode"] | components["schemas"]["EquationNode"] | components["schemas"]["CodeBlockNode"] | components["schemas"]["TableNode"] | components["schemas"]["NoteNode"] | components["schemas"]["CalloutNode"] | components["schemas"]["DefinitionNode"] | components["schemas"]["FigureNode"])[];
+            content: (components["schemas"]["HeadingNode"] | components["schemas"]["ParagraphNode"] | components["schemas"]["TextItemNode"] | components["schemas"]["ListNode"] | components["schemas"]["FormAreaNode"] | components["schemas"]["EquationNode"] | components["schemas"]["CodeBlockNode"] | components["schemas"]["TableNode"] | components["schemas"]["NoteNode"] | components["schemas"]["CalloutNode"] | components["schemas"]["DefinitionNode"] | components["schemas"]["FigureNode"])[];
             /**
              * Has Notes
              * @default false
@@ -2796,6 +3130,8 @@ export interface components {
             semantic_node_type?: string | null;
             /** Semantic Match Score */
             semantic_match_score?: number | null;
+            /** Display Hint */
+            display_hint?: string | null;
             /** List Style */
             list_style?: string | null;
             /** Item Count */
@@ -2975,6 +3311,24 @@ export interface components {
             /** @default not_started */
             status: components["schemas"]["CardStatus"];
         };
+        /** MissingEntryTableRead */
+        MissingEntryTableRead: {
+            /** Table Name */
+            table_name: string;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "info" | "warning" | "error";
+            /** Reason */
+            reason: string;
+            /** Expected Rule */
+            expected_rule: string;
+            /** Observed Row Count */
+            observed_row_count: number;
+            /** Related Tables */
+            related_tables?: string[];
+        };
         /**
          * NavigationConfigSchema
          * @description Schema for navigation hierarchy configuration.
@@ -3124,7 +3478,7 @@ export interface components {
              */
             order: number;
             /** Items */
-            items?: (components["schemas"]["TextItem"] | components["schemas"]["HeadingItem"] | components["schemas"]["ImageItem"] | components["schemas"]["TableItem"] | components["schemas"]["EquationItem"] | components["schemas"]["CodeItem"] | components["schemas"]["ListItem"] | components["schemas"]["QuestionItem"])[];
+            items?: (components["schemas"]["TextItem"] | components["schemas"]["HeadingItem"] | components["schemas"]["ImageItem"] | components["schemas"]["TableItem"] | components["schemas"]["EquationItem"] | components["schemas"]["CodeItem"] | components["schemas"]["ListItem"] | components["schemas"]["FormAreaItem"] | components["schemas"]["QuestionItem"])[];
             metadata?: components["schemas"]["PageMetadata"];
         };
         /** PageMetadata */
@@ -3626,6 +3980,8 @@ export interface components {
             semantic_node_type?: string | null;
             /** Semantic Match Score */
             semantic_match_score?: number | null;
+            /** Display Hint */
+            display_hint?: string | null;
             /** Semantic Type */
             semantic_type?: string | null;
             /** Question Signal */
@@ -3845,6 +4201,29 @@ export interface components {
             name: string;
             /** Permissions */
             permissions: components["schemas"]["Permission"][];
+        };
+        /** RollbackDeleteActionRequest */
+        RollbackDeleteActionRequest: {
+            /** Reason */
+            reason: string;
+        };
+        /** RollbackDeleteActionResponse */
+        RollbackDeleteActionResponse: {
+            /** Diagnosis Id */
+            diagnosis_id: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "rolled_back" | "already_rolled_back";
+            /** Action Id */
+            action_id: string;
+            /** Action Type */
+            action_type: string;
+            /** Restored Row Count */
+            restored_row_count: number;
+            /** Rolled Back At */
+            rolled_back_at?: string | null;
         };
         /**
          * SectionConfigSchema
@@ -4197,6 +4576,8 @@ export interface components {
             semantic_node_type?: string | null;
             /** Semantic Match Score */
             semantic_match_score?: number | null;
+            /** Display Hint */
+            display_hint?: string | null;
             /** Row Count */
             row_count?: number | null;
             /** Column Count */
@@ -4298,6 +4679,8 @@ export interface components {
             semantic_node_type?: string | null;
             /** Semantic Match Score */
             semantic_match_score?: number | null;
+            /** Display Hint */
+            display_hint?: string | null;
             /** Source Offset */
             source_offset?: number | null;
             /** Source Length */
@@ -4320,6 +4703,23 @@ export interface components {
             checkbox_state?: string | null;
             /** Text Runs */
             text_runs?: components["schemas"]["TextRunMetadata"][];
+        };
+        /**
+         * TextItemNode
+         * @description A discrete text element, typically within a form area.
+         *
+         *     Unlike ``ParagraphNode`` (flowing prose), ``TextItemNode`` represents
+         *     individual text fragments like word-bank choices, form field labels,
+         *     or answer options.
+         */
+        TextItemNode: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "text_item";
+            /** Runs */
+            runs?: (components["schemas"]["PlainRun"] | components["schemas"]["EqRun"] | components["schemas"]["BoldRun"] | components["schemas"]["ItalicRun"] | components["schemas"]["CodeRun"] | components["schemas"]["LinkRun"])[];
         };
         /** TextRunMetadata */
         TextRunMetadata: {
@@ -7512,6 +7912,208 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FlashcardResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_diagnosis_endpoint_api_v1_triage_diagnoses_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiagnosisRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagnosisRunRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_diagnosis_endpoint_api_v1_triage_diagnoses__diagnosis_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                diagnosis_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagnosisRunRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_diagnosis_findings_endpoint_api_v1_triage_diagnoses__diagnosis_id__findings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                diagnosis_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagnosisFindingRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_document_process_runs_endpoint_api_v1_triage_diagnoses__diagnosis_id__actions_delete_document_process_runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                diagnosis_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteDocumentProcessRunsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteDocumentProcessRunsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_delete_action_endpoint_api_v1_triage_diagnoses__diagnosis_id__actions__action_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                diagnosis_id: number;
+                action_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelDeleteActionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CancelDeleteActionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rollback_delete_action_endpoint_api_v1_triage_diagnoses__diagnosis_id__actions__action_id__rollback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                diagnosis_id: number;
+                action_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RollbackDeleteActionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RollbackDeleteActionResponse"];
                 };
             };
             /** @description Validation Error */

@@ -214,6 +214,8 @@ export default function CourseDetailPage() {
     return () => window.clearInterval(interval);
   }, [processingDoc, refreshDocument, statusByDocId]);
 
+  const processedDocumentIds = new Set((studyPlan?.documents ?? []).map((docNode) => docNode.document_id));
+
   return (
     <Layout>
       <div className="flex flex-col gap-8 py-8">
@@ -377,6 +379,19 @@ export default function CourseDetailPage() {
                           </span>
                         )}
                       </button>
+                      {isInFlight(doc.id) || isProcessingStatus(statusByDocId[doc.id]?.status) ? null : processedDocumentIds.has(doc.id) ? (
+                        <Link
+                          to={`/triage?courseId=${course.id}`}
+                          className="shrink-0 rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-[11px] font-medium text-gray-700 transition-colors hover:bg-gray-100"
+                          title="Open triage for this course"
+                        >
+                          Triage
+                        </Link>
+                      ) : (
+                        <span className="shrink-0 rounded-lg border border-gray-200 bg-gray-100 px-2.5 py-1.5 text-[11px] font-medium text-gray-500">
+                          Triage unavailable
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -398,7 +413,7 @@ export default function CourseDetailPage() {
                   ))}
                 </div>
               )}
-              {!planLoading && (!studyPlan || studyPlan.chapters.length === 0) && (
+              {!planLoading && (!studyPlan || (studyPlan.chapters ?? []).length === 0) && (
                 <div className="rounded-2xl bg-white p-6 text-center shadow-sm ring-1 ring-black/5">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="mx-auto h-8 w-8 text-gray-300">
                     <path d="M3.25 4A2.25 2.25 0 0 0 1 6.25v7.5A2.25 2.25 0 0 0 3.25 16h7.5A2.25 2.25 0 0 0 13 13.75v-7.5A2.25 2.25 0 0 0 10.75 4h-7.5ZM19 4.75a.75.75 0 0 0-1.28-.53l-3 3a.75.75 0 0 0-.22.53v4.5c0 .199.079.39.22.53l3 3A.75.75 0 0 0 19 15.25v-10.5Z" />
@@ -412,9 +427,9 @@ export default function CourseDetailPage() {
                   </p>
                 </div>
               )}
-              {!planLoading && studyPlan && studyPlan.chapters.length > 0 && (
+              {!planLoading && studyPlan && (studyPlan.chapters ?? []).length > 0 && (
                 <div className="flex flex-col gap-4">
-                  {[...studyPlan.chapters].sort((a, b) => a.order - b.order).map((chapter) => (
+                  {[...(studyPlan.chapters ?? [])].sort((a, b) => a.order - b.order).map((chapter) => (
                     <ChapterSection key={chapter.id} chapter={chapter} />
                   ))}
                 </div>

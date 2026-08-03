@@ -10,10 +10,19 @@ import GoalCard from "../components/study/GoalCard";
 import NotesCard from "../components/study/NotesCard";
 import ContentCard from "../components/study/ContentCard";
 import LessonContent from "../components/study/LessonContent";
+import FlashcardPractice from "../components/study/FlashcardPractice";
 import { getStudyService } from "../services/getStudyService";
 import type { StudyPageData } from "../services/study";
 import { useNotes } from "../hooks/useNotes";
 import { useAuth } from "../hooks/useAuth";
+import {
+  createLessonFlashcard,
+  deleteFlashcard,
+  generateLessonFlashcards,
+  getLessonFlashcards,
+  updateFlashcard,
+  type FlashcardResponse,
+} from "../services/flashcardsApi";
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -26,20 +35,13 @@ function formatMinutes(mins: number): string {
   return m > 0 ? `~${h}h ${m}m` : `~${h}h`;
 }
 
+type Offset = { x: number; y: number };
+
 const STAR_ICON: ReactNode = (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-amber-500">
     <path fillRule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401Z" clipRule="evenodd" />
   </svg>
 );
-
-type Offset = { x: number; y: number };
-type NotesMode = "open" | "closed";
-
-const NOTES_STORAGE_KEY = "study-notes-layout-v2";
-const DEFAULT_NOTES_OFFSETS: Record<NotesMode, Offset> = {
-  open: { x: 0, y: 0 },
-  closed: { x: 0, y: 0 },
-};
 
 /* ------------------------------------------------------------------ */
 /*  Loading skeleton                                                   */
@@ -126,39 +128,13 @@ export default function StudyPage() {
     originY: number;
   } | null>(null);
   const dragCleanupRef = useRef<(() => void) | null>(null);
-  const notesFloatRef = useRef<HTMLDivElement | null>(null);
   const [notesOpen, setNotesOpen] = useState(false);
-  const [notesOffsets, setNotesOffsets] = useState<Record<NotesMode, Offset>>(DEFAULT_NOTES_OFFSETS);
   const [draggingNotes, setDraggingNotes] = useState(false);
+  const [notesOffset, setNotesOffset] = useState<Offset>({ x: 0, y: 0 });
   const [selectionText, setSelectionText] = useState<string>("");
-  const notesMode: NotesMode = notesOpen ? "open" : "closed";
-  const notesOffset = notesOffsets[notesMode];
-
-  const setActiveNotesOffset = useCallback((next: Offset) => {
-    setNotesOffsets((prev) => ({ ...prev, [notesMode]: next }));
-  }, [notesMode]);
-
-  const clampNotesOffset = useCallback((offset: Offset): Offset => {
-    if (typeof window === "undefined") return offset;
-    const node = notesFloatRef.current;
-    if (!node) return offset;
-
-    const rect = node.getBoundingClientRect();
-    const minLeft = 8;
-    const minTop = 72;
-    const maxRight = window.innerWidth - 8;
-    const maxBottom = window.innerHeight - 8;
-
-    let x = offset.x;
-    let y = offset.y;
-
-    if (rect.left < minLeft) x += minLeft - rect.left;
-    if (rect.right > maxRight) x -= rect.right - maxRight;
-    if (rect.top < minTop) y += minTop - rect.top;
-    if (rect.bottom > maxBottom) y -= rect.bottom - maxBottom;
-
-    return { x, y };
-  }, []);
+  const [lessonFlashcards, setLessonFlashcards] = useState<Record<number, FlashcardResponse[]>>({});
+  const [flashcardsLoading, setFlashcardsLoading] = useState(false);
+  const [flashcardsError, setFlashcardsError] = useState<string | null>(null);
 
   const getScopedSelectionText = useCallback((): string => {
     const scope = lessonSelectionScopeRef.current;
@@ -232,7 +208,7 @@ export default function StudyPage() {
     const resume = activeDocument.resumeLessonId;
     const firstItem = activeDocument.groups[0]?.items[0]?.id ?? null;
     setSelectedId((current) => {
-      if (current && (activeDocument.contentMap[current] || activeDocument.lessonDbIdMap[current] !== undefined)) {
+      if (current && (activeDocument.contentMap[current] || activeDocument.lessonIdMap[current] !== undefined)) {
         return current;
       }
       return resume ?? firstItem;
@@ -240,8 +216,78 @@ export default function StudyPage() {
   }, [activeDocument]);
 
   // ── Notes integration (must be before early returns — hooks order) ──
-  const lessonDbId = activeDocument && selectedId != null ? (activeDocument.lessonDbIdMap[selectedId] ?? null) : null;
-  const notes = useNotes(lessonDbId);
+  const lessonId = activeDocument && selectedId != null ? (activeDocument.lessonIdMap[selectedId] ?? null) : null;
+  const notes = useNotes(selectedId, lessonId);
+  const notesUnavailableMessage = lessonId == null
+    ? "Notes are unavailable for this lesson because it is missing a backend lesson_id."
+    : null;
+
+  const loadLessonFlashcards = useCallback(async (targetLessonId: number) => {
+    setFlashcardsLoading(true);
+    setFlashcardsError(null);
+    try {
+      const cards = await getLessonFlashcards(targetLessonId);
+      setLessonFlashcards((prev) => ({ ...prev, [targetLessonId]: cards }));
+    } catch (err: unknown) {
+      setFlashcardsError(err instanceof Error ? err.message : "Failed to load flashcards");
+    } finally {
+      setFlashcardsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (lessonId == null) {
+      setFlashcardsError(null);
+      setFlashcardsLoading(false);
+      return;
+    }
+    void loadLessonFlashcards(lessonId);
+  }, [lessonId, loadLessonFlashcards]);
+
+  const handleCreateFlashcard = useCallback(async (front: string, back: string) => {
+    if (lessonId == null) {
+      throw new Error("This lesson is missing lesson_id and cannot save flashcards.");
+    }
+    await createLessonFlashcard(lessonId, front, back);
+    await loadLessonFlashcards(lessonId);
+  }, [lessonId, loadLessonFlashcards]);
+
+  const handleGenerateFlashcards = useCallback(async (force = false) => {
+    if (lessonId == null) {
+      throw new Error("This lesson is missing lesson_id and cannot generate flashcards.");
+    }
+    try {
+      const cards = await generateLessonFlashcards(lessonId, force);
+      setLessonFlashcards((prev) => ({ ...prev, [lessonId]: cards }));
+      setFlashcardsError(null);
+    } catch (err: unknown) {
+      setFlashcardsError(err instanceof Error ? err.message : "Failed to generate flashcards");
+      throw err;
+    }
+  }, [lessonId]);
+
+  const handleDeleteFlashcard = useCallback(async (cardId: number) => {
+    if (lessonId == null) {
+      throw new Error("This lesson is missing lesson_id and cannot delete flashcards.");
+    }
+    await deleteFlashcard(cardId);
+    await loadLessonFlashcards(lessonId);
+  }, [lessonId, loadLessonFlashcards]);
+
+  const handleUpdateFlashcard = useCallback(async (cardId: number, front: string, back: string) => {
+    if (lessonId == null) {
+      throw new Error("This lesson is missing lesson_id and cannot update flashcards.");
+    }
+    await updateFlashcard(cardId, front, back);
+    await loadLessonFlashcards(lessonId);
+  }, [lessonId, loadLessonFlashcards]);
+
+  const handleRefreshFlashcards = useCallback(() => {
+    if (lessonId == null) return;
+    void loadLessonFlashcards(lessonId);
+  }, [lessonId, loadLessonFlashcards]);
+
+  const currentFlashcards = lessonId == null ? [] : (lessonFlashcards[lessonId] ?? []);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -260,80 +306,6 @@ export default function StudyPage() {
     };
   }, [getScopedSelectionText]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const raw = window.localStorage.getItem(NOTES_STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as {
-          open?: boolean;
-          offsets?: { open?: Offset; closed?: Offset };
-        };
-        if (parsed.offsets?.open && parsed.offsets?.closed) {
-          setNotesOffsets({
-            open: parsed.offsets.open,
-            closed: parsed.offsets.closed,
-          });
-        }
-        if (typeof parsed.open === "boolean") {
-          setNotesOpen(parsed.open);
-        }
-        return;
-      }
-
-      const legacyRaw = window.localStorage.getItem("study-notes-offset");
-      if (legacyRaw) {
-        const parsedLegacy = JSON.parse(legacyRaw) as { x?: unknown; y?: unknown };
-        if (typeof parsedLegacy.x === "number" && typeof parsedLegacy.y === "number") {
-          setNotesOffsets({
-            open: { x: parsedLegacy.x, y: parsedLegacy.y },
-            closed: DEFAULT_NOTES_OFFSETS.closed,
-          });
-        }
-      }
-    } catch {
-      // noop
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(
-      NOTES_STORAGE_KEY,
-      JSON.stringify({
-        open: notesOpen,
-        offsets: notesOffsets,
-      }),
-    );
-  }, [notesOffsets, notesOpen]);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || window.innerWidth < 768) return;
-    const id = window.requestAnimationFrame(() => {
-      const clamped = clampNotesOffset(notesOffset);
-      if (clamped.x !== notesOffset.x || clamped.y !== notesOffset.y) {
-        setActiveNotesOffset(clamped);
-      }
-    });
-    return () => {
-      window.cancelAnimationFrame(id);
-    };
-  }, [clampNotesOffset, notesOffset, setActiveNotesOffset]);
-
-  useEffect(() => {
-    function clampOnResize() {
-      if (window.innerWidth < 768) return;
-      const clamped = clampNotesOffset(notesOffset);
-      if (clamped.x !== notesOffset.x || clamped.y !== notesOffset.y) {
-        setActiveNotesOffset(clamped);
-      }
-    }
-
-    window.addEventListener("resize", clampOnResize);
-    return () => {
-      window.removeEventListener("resize", clampOnResize);
-    };
-  }, [clampNotesOffset, notesOffset, setActiveNotesOffset]);
 
   function appendSelectionToNotes() {
     const snippet = selectionText.trim();
@@ -373,7 +345,7 @@ export default function StudyPage() {
     const handlePointerMove = (moveEvent: PointerEvent) => {
       const state = dragStateRef.current;
       if (!state) return;
-      setActiveNotesOffset({
+      setNotesOffset({
         x: state.originX + (moveEvent.clientX - state.startX),
         y: state.originY + (moveEvent.clientY - state.startY),
       });
@@ -649,24 +621,46 @@ export default function StudyPage() {
                   />
                 )}
 
+                <div className={`hidden lg:block lg:absolute lg:inset-y-0 lg:right-4 lg:z-30 lg:mt-0 lg:pointer-events-none ${notesOpen ? "lg:w-80" : "lg:w-24"}`}>
+                  <div
+                    className={`lg:sticky lg:top-24 lg:pointer-events-auto ${draggingNotes ? "rounded-2xl shadow-2xl ring-2 ring-amber-200" : ""}`}
+                    style={{ transform: `translate(${notesOffset.x}px, ${notesOffset.y}px)` }}
+                  >
+                    <NotesCard
+                      value={notes.value}
+                      onChange={notes.onChange}
+                      onBlur={notes.onBlur}
+                      onSave={notes.onSave}
+                      dirty={notes.dirty}
+                      status={notes.status}
+                      saveUnavailableMessage={notesUnavailableMessage}
+                      open={notesOpen}
+                      onOpenChange={setNotesOpen}
+                      selectionText={selectionText}
+                      onAddSelection={appendSelectionToNotes}
+                      onDismissSelection={() => {
+                        setSelectionText("");
+                        window.getSelection()?.removeAllRanges();
+                      }}
+                      dragging={draggingNotes}
+                      onDragStart={(event) => {
+                        handleNotesDragStart(event);
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div
-                className={`mt-3 md:fixed md:right-8 md:z-40 md:mt-0 ${
-                  notesOpen ? "md:top-24" : "md:top-44"
-                }`}
-              >
-                <div
-                  ref={notesFloatRef}
-                  className={draggingNotes ? "rounded-2xl shadow-2xl ring-2 ring-amber-200" : ""}
-                  style={{
-                    transform: `translate(${notesOffset.x}px, ${notesOffset.y}px)`,
-                  }}
-                >
+              <div className="lg:hidden">
+                <div className="mt-3">
                   <NotesCard
                     value={notes.value}
                     onChange={notes.onChange}
+                    onBlur={notes.onBlur}
+                    onSave={notes.onSave}
+                    dirty={notes.dirty}
                     status={notes.status}
+                    saveUnavailableMessage={notesUnavailableMessage}
                     open={notesOpen}
                     onOpenChange={setNotesOpen}
                     selectionText={selectionText}
@@ -674,10 +668,6 @@ export default function StudyPage() {
                     onDismissSelection={() => {
                       setSelectionText("");
                       window.getSelection()?.removeAllRanges();
-                    }}
-                    dragging={draggingNotes}
-                    onDragStart={(event) => {
-                      handleNotesDragStart(event);
                     }}
                   />
                 </div>
@@ -691,6 +681,18 @@ export default function StudyPage() {
                 actionLabel={content.goal.actionLabel}
               />
             )}
+
+            <FlashcardPractice
+              cards={currentFlashcards}
+              loading={flashcardsLoading}
+              error={flashcardsError}
+              lessonId={lessonId}
+              onRefresh={handleRefreshFlashcards}
+              onCreate={handleCreateFlashcard}
+              onGenerate={handleGenerateFlashcards}
+              onDelete={handleDeleteFlashcard}
+              onUpdate={handleUpdateFlashcard}
+            />
 
             {content?.practiceCards && content.practiceCards.length > 0 && (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

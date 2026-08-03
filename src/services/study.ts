@@ -74,7 +74,7 @@ export interface StudyDocumentData {
   groups: StudyGroup[];
   progressItems: StudyProgressItem[];
   contentMap: Record<string, StudyContent>;
-  lessonDbIdMap: Record<string, number>;
+  lessonIdMap: Record<string, number>;
   resumeLessonId: string | null;
 }
 
@@ -102,7 +102,7 @@ export interface StudyPageData {
    * lesson ID (LessonModel.id). Used to scope notes and progress API calls.
    * A lesson is absent from the map if lesson_id was null (not yet provisioned).
    */
-  lessonDbIdMap: Record<string, number>;
+  lessonIdMap: Record<string, number>;
   /** Per-document study payloads for the study screen picker. */
   documents: StudyDocumentData[];
   /** Default selected document id for the screen. */

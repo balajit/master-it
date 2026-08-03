@@ -5,7 +5,11 @@ import type { NoteStatus } from "../../hooks/useNotes";
 interface NotesCardProps {
   value:     string;
   onChange:  (text: string) => void;
+  onBlur?:   () => void;
+  onSave?:   () => void;
+  dirty?:    boolean;
   status?:   NoteStatus;
+  saveUnavailableMessage?: string | null;
   dragging?: boolean;
   onDragStart?: (event: React.PointerEvent<HTMLDivElement>) => void;
   open?: boolean;
@@ -94,7 +98,11 @@ function SaveStatus({ status }: { status: NoteStatus }) {
 export default function NotesCard({
   value,
   onChange,
+  onBlur,
+  onSave,
+  dirty = false,
   status = "idle",
+  saveUnavailableMessage = null,
   dragging = false,
   onDragStart,
   open,
@@ -107,6 +115,7 @@ export default function NotesCard({
   const [openInternal, setOpenInternal] = useState(false);
   const [maximized, setMaximized] = useState(false);
   const isOpen = open ?? openInternal;
+  const saveUnavailable = !!saveUnavailableMessage;
 
   function setOpen(next: boolean) {
     if (open === undefined) setOpenInternal(next);
@@ -131,7 +140,7 @@ export default function NotesCard({
 
   // Expanded (post-it or maximized)
   const textareaHeight = maximized ? "flex-1" : "h-44";
-  const cardHeight = maximized ? "flex flex-col" : "w-76";
+  const cardHeight = maximized ? "flex flex-col" : isOpen ? "w-76" : "w-[5.7rem]";
 
   return (
     <div
@@ -204,16 +213,33 @@ export default function NotesCard({
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Take notes"
+            onBlur={onBlur}
+            placeholder={saveUnavailable ? "Notes unavailable for this lesson" : "Take notes"}
+            readOnly={saveUnavailable}
             className={`w-full ${textareaHeight} resize-none rounded-lg border border-amber-200 bg-white/70 px-2.5 py-2 text-sm leading-relaxed text-gray-800 placeholder:text-gray-400 focus:border-amber-300 focus:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-1 overflow-y-auto`}
           />
+          {saveUnavailable && (
+            <p className="mt-1.5 rounded-md border border-red-200 bg-red-50 px-2 py-1 text-[11px] text-red-700">
+              {saveUnavailableMessage}
+            </p>
+          )}
           <div className="mt-1.5 flex items-center justify-between">
             <SaveStatus status={status} />
-            {value.length > 0 && (
-              <p className="text-right text-[10px] text-amber-400">
-                {value.length} chars
-              </p>
-            )}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onSave}
+                disabled={!dirty || saveUnavailable}
+                className="rounded-md border border-amber-300 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-700 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white"
+              >
+                Save
+              </button>
+              {value.length > 0 && (
+                <p className="text-right text-[10px] text-amber-400">
+                  {value.length} chars
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </Card>

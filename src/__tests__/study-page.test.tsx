@@ -58,7 +58,7 @@ describe("StudyPage", () => {
         "lesson-1": { info: null, learning: null, goal: null, practiceCards: [] },
         "lesson-2": { info: null, learning: null, goal: null, practiceCards: [] },
       },
-      lessonDbIdMap: {},
+      lessonIdMap: {},
       resumeLessonId: "lesson-2",
       documents: [
         {
@@ -81,7 +81,7 @@ describe("StudyPage", () => {
             "lesson-1": { info: null, learning: null, goal: null, practiceCards: [] },
             "lesson-2": { info: null, learning: null, goal: null, practiceCards: [] },
           },
-          lessonDbIdMap: {},
+          lessonIdMap: {},
           resumeLessonId: "lesson-2",
         },
       ],

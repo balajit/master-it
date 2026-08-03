@@ -243,6 +243,16 @@ function RenderItem({ item, index }: { item: ContentItem; index: number }) {
         </p>
       );
 
+    case "text_item":
+      return (
+        <p
+          key={index}
+          className={`text-sm leading-relaxed text-gray-700 ${getAlignmentClass(item.blockStyle?.alignment)} ${getIndentClass(item.blockStyle?.indentLevel)}`.trim()}
+        >
+          <RenderRichText runs={item.textRuns} fallback={item.content} />
+        </p>
+      );
+
     case "list": {
       const listClass = `ml-5 flex flex-col gap-1 text-sm text-gray-700 ${getAlignmentClass(item.blockStyle?.alignment)} ${getIndentClass(item.blockStyle?.indentLevel)}`.trim();
       const isOrdered = item.listStyle === "numbered" || item.listStyle === "roman" || item.listStyle === "alpha" || item.ordered;
@@ -290,6 +300,31 @@ function RenderItem({ item, index }: { item: ContentItem; index: number }) {
         </ul>
       );
     }
+
+    case "form_area":
+      return (
+        <div
+          key={index}
+          className={`rounded-xl border border-amber-300 bg-amber-50/80 p-3 ${getAlignmentClass(item.blockStyle?.alignment)} ${getIndentClass(item.blockStyle?.indentLevel)}`.trim()}
+        >
+          {item.displayHint === "answer_box" ? (
+            <div className="min-h-10 rounded-md border border-amber-400 bg-white px-2.5 py-2 text-sm text-amber-900">
+              {item.items.join(" ")}
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {item.items.map((value, valueIndex) => (
+                <span
+                  key={`${item.id}-form-area-${valueIndex}`}
+                  className="inline-flex min-h-8 items-center rounded-md border border-amber-300 bg-white px-2.5 py-1 text-sm text-amber-900"
+                >
+                  <RenderRichText runs={item.itemTextRuns?.[valueIndex]} fallback={value} />
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      );
 
     case "equation": {
       let html: string;

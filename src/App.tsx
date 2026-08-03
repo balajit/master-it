@@ -6,6 +6,7 @@ import CourseManagementPage from "./pages/CourseManagementPage";
 import EditCoursePage from "./pages/EditCoursePage";
 import CourseDetailPage from "./pages/CourseDetailPage";
 import StudyPage from "./pages/StudyPage";
+import TriagePage from "./pages/TriagePage";
 import { useAuth } from "./hooks/useAuth";
 import { hasRole } from "./context/auth-context";
 
@@ -52,6 +53,14 @@ export default function App() {
         />
         <Route path="/courses/:id" element={<CourseDetailPage />} />
         <Route path="/courses/:id/study" element={<StudyPage />} />
+        <Route
+          path="/triage"
+          element={
+            <ContentCreatorRoute>
+              <TriagePage />
+            </ContentCreatorRoute>
+          }
+        />
         <Route
           path="/courses/:id/edit"
           element={

@@ -28,6 +28,25 @@ export interface TextItem {
   blankSpanPositions?: number[];
 }
 
+export interface FormAreaItem {
+  type: "form_area";
+  id: string;
+  order: number;
+  items: string[];
+  itemTextRuns?: (RichTextRun[] | undefined)[];
+  displayHint?: string | null;
+  blockStyle?: ItemBlockStyle;
+}
+
+export interface TextItemNodeItem {
+  type: "text_item";
+  id: string;
+  order: number;
+  content: string;
+  textRuns?: RichTextRun[];
+  blockStyle?: ItemBlockStyle;
+}
+
 export interface HeadingItem {
   type: "heading";
   id: string;
@@ -134,10 +153,12 @@ export interface QuestionItem {
 
 export type ContentItem =
   | TextItem
+  | TextItemNodeItem
   | HeadingItem
   | ImageItem
   | TableItem
   | EquationItem
   | CodeItem
   | ListItem
+  | FormAreaItem
   | QuestionItem;

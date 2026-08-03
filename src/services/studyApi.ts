@@ -9,7 +9,7 @@ import type {
   StudyContent,
 } from "./study";
 import type { components } from "../api/v1.d.ts";
-import type { ContentItem } from "../types/contentNode";
+import type { ContentItem, RichTextRun } from "../types/contentNode";
 
 type Chapter = components["schemas"]["Chapter"];
 type Lesson  = components["schemas"]["Lesson"];
@@ -27,14 +27,14 @@ interface TransformedStudyData {
   groups: StudyGroup[];
   progressItems: StudyProgressItem[];
   contentMap: Record<string, StudyContent>;
-  lessonDbIdMap: Record<string, number>;
+  lessonIdMap: Record<string, number>;
 }
 
 function toNumber(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
-function mapTextRuns(runs?: TextRunMetadata[]) {
+function mapTextRuns(runs?: TextRunMetadata[]): RichTextRun[] | undefined {
   if (!Array.isArray(runs) || runs.length === 0) return undefined;
   return runs.map((run) => ({
     text: typeof run.text === "string" ? run.text : "",
@@ -44,6 +44,106 @@ function mapTextRuns(runs?: TextRunMetadata[]) {
     isUnderline: !!run.style?.font?.is_underline,
     isStrikethrough: !!run.style?.font?.is_strikethrough,
   }));
+}
+
+function mapNodeRuns(
+  runs?: (
+    | components["schemas"]["PlainRun"]
+    | components["schemas"]["EqRun"]
+    | components["schemas"]["BoldRun"]
+    | components["schemas"]["ItalicRun"]
+    | components["schemas"]["CodeRun"]
+    | components["schemas"]["LinkRun"]
+  )[],
+): RichTextRun[] | undefined {
+  if (!Array.isArray(runs) || runs.length === 0) return undefined;
+
+  return runs.map((run) => {
+    if (run.run_type === "link") {
+      return {
+        text: run.text ?? "",
+        linkTarget: run.href ?? undefined,
+        isBold: false,
+        isItalic: false,
+        isUnderline: false,
+        isStrikethrough: false,
+      };
+    }
+
+    if (run.run_type === "eq") {
+      return {
+        text: run.latex ? `$${run.latex}$` : "",
+        linkTarget: undefined,
+        isBold: false,
+        isItalic: false,
+        isUnderline: false,
+        isStrikethrough: false,
+      };
+    }
+
+    return {
+      text: run.text ?? "",
+      linkTarget: undefined,
+      isBold: run.run_type === "bold",
+      isItalic: run.run_type === "italic",
+      isUnderline: false,
+      isStrikethrough: false,
+    };
+  });
+}
+
+function mapFormAreaItems(rawItems: unknown): {
+  items: string[];
+  itemTextRuns?: (RichTextRun[] | undefined)[];
+} {
+  if (!Array.isArray(rawItems) || rawItems.length === 0) {
+    return { items: [] };
+  }
+
+  const items: string[] = [];
+  const itemTextRuns: (RichTextRun[] | undefined)[] = [];
+
+  for (const entry of rawItems) {
+    if (typeof entry === "string") {
+      items.push(entry);
+      itemTextRuns.push(undefined);
+      continue;
+    }
+
+    if (!entry || typeof entry !== "object") continue;
+
+    const maybeTextItem = entry as {
+      type?: unknown;
+      text?: unknown;
+      runs?: (
+        | components["schemas"]["PlainRun"]
+        | components["schemas"]["EqRun"]
+        | components["schemas"]["BoldRun"]
+        | components["schemas"]["ItalicRun"]
+        | components["schemas"]["CodeRun"]
+        | components["schemas"]["LinkRun"]
+      )[];
+    };
+
+    if (typeof maybeTextItem.text === "string") {
+      items.push(maybeTextItem.text);
+      itemTextRuns.push(undefined);
+      continue;
+    }
+
+    if (maybeTextItem.type === "text_item") {
+      const runs = mapNodeRuns(maybeTextItem.runs);
+      const text = runs?.map((run) => run.text).join("") ?? "";
+      items.push(text);
+      itemTextRuns.push(runs);
+    }
+  }
+
+  if (itemTextRuns.some((runs) => Array.isArray(runs) && runs.length > 0)) {
+    return { items, itemTextRuns };
+  }
+
+  return { items };
 }
 
 function mapBlockStyle(style?: components["schemas"]["BlockStyleMetadata"] | null) {
@@ -77,6 +177,19 @@ function mapApiItem(item: ApiContentItem): ContentItem | null {
         fillInBlankIds: item.metadata?.fill_in_blank_ids ?? [],
         blankSpanPositions: item.metadata?.blank_span_positions ?? [],
       };
+    case "form_area":
+      {
+      const { items, itemTextRuns } = mapFormAreaItems(item.items);
+      return {
+        type: "form_area",
+        id,
+        order,
+        items,
+        itemTextRuns,
+        displayHint: item.metadata?.display_hint ?? null,
+        blockStyle: mapBlockStyle(item.style),
+      };
+    }
     case "heading":
       return {
         type: "heading",
@@ -249,7 +362,7 @@ export class ApiStudyService implements StudyService {
 
     if (!resumeError && resumeData?.lesson_id != null) {
       for (const doc of documents) {
-        const matchedLesson = Object.entries(doc.lessonDbIdMap).find(
+        const matchedLesson = Object.entries(doc.lessonIdMap).find(
           ([, dbId]) => dbId === resumeData.lesson_id,
         );
         doc.resumeLessonId = matchedLesson?.[0] ?? null;
@@ -266,7 +379,7 @@ export class ApiStudyService implements StudyService {
       groups:        selectedDocument?.groups ?? [],
       progressItems: selectedDocument?.progressItems ?? [],
       contentMap:    selectedDocument?.contentMap ?? {},
-      lessonDbIdMap: selectedDocument?.lessonDbIdMap ?? {},
+      lessonIdMap: selectedDocument?.lessonIdMap ?? {},
       resumeLessonId: selectedDocument?.resumeLessonId ?? null,
       documents,
       selectedDocumentId,
@@ -277,13 +390,13 @@ export class ApiStudyService implements StudyService {
     const allGroups: StudyGroup[] = [];
     const allProgressItems: StudyProgressItem[] = [];
     const allContentMap: Record<string, StudyContent> = {};
-    const lessonDbIdMap: Record<string, number> = {};
+    const lessonIdMap: Record<string, number> = {};
 
     const sortedChapters = [...chapters].sort((a, b) => a.order - b.order);
     for (const chapter of sortedChapters) {
       const { group, progressItems, contentMap } = this._transformChapter(
         chapter,
-        lessonDbIdMap,
+        lessonIdMap,
       );
       allGroups.push(group);
       allProgressItems.push(...progressItems);
@@ -294,11 +407,11 @@ export class ApiStudyService implements StudyService {
       groups: allGroups,
       progressItems: allProgressItems,
       contentMap: allContentMap,
-      lessonDbIdMap,
+      lessonIdMap,
     };
   }
 
-  private _transformChapter(chapter: Chapter, lessonDbIdMap: Record<string, number>): {
+  private _transformChapter(chapter: Chapter, lessonIdMap: Record<string, number>): {
     group: StudyGroup;
     progressItems: StudyProgressItem[];
     contentMap: Record<string, StudyContent>;
@@ -313,8 +426,11 @@ export class ApiStudyService implements StudyService {
         label:  lesson.title || "Untitled Lesson",
         status: "not_started",
       });
-      if (lesson.lesson_id != null) {
-        lessonDbIdMap[lesson.id] = lesson.lesson_id;
+      const normalizedLessonId =
+        lesson.lesson_id
+        ?? (typeof lesson.id === "string" ? Number(lesson.id) : NaN);
+      if (Number.isFinite(normalizedLessonId)) {
+        lessonIdMap[lesson.id] = normalizedLessonId;
       }
 
       const contentItems = extractLessonContentItems(lesson.pages ?? []);

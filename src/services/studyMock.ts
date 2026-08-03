@@ -113,7 +113,7 @@ function buildMockStudyPage(courseId: string): StudyPageData {
         groups: MOCK_GROUPS,
         progressItems,
         contentMap,
-        lessonDbIdMap: {},
+        lessonIdMap: {},
         resumeLessonId: allIds[0] ?? null,
       },
     ] as StudyDocumentData[],
@@ -124,7 +124,7 @@ function buildMockStudyPage(courseId: string): StudyPageData {
     groups: MOCK_GROUPS,
     progressItems,
     contentMap,
-    lessonDbIdMap: {},
+    lessonIdMap: {},
     resumeLessonId: allIds[0] ?? null,
   };
 }
@@ -164,7 +164,7 @@ export class MockStudyService implements StudyService {
         groups: apiData.groups,
         progressItems: apiData.progressItems,
         contentMap: mergedContentMap,
-        lessonDbIdMap: apiData.lessonDbIdMap,
+        lessonIdMap: apiData.lessonIdMap,
         resumeLessonId:
           apiData.resumeLessonId ??
           allIds[0] ??

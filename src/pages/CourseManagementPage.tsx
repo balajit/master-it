@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router";
 import client from "../api/client";
 import type { components } from "../api/v1.d.ts";
@@ -41,6 +41,8 @@ export default function CourseManagementPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [deleting, setDeleting] = useState<Course | null>(null);
   const [deletingId, setDeletingId] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | Course["status"]>("all");
 
   const [docsByCourse, setDocsByCourse] = useState<Record<number, Document[]>>(
     {},
@@ -58,6 +60,20 @@ export default function CourseManagementPage() {
     courseId: number;
     document: Document;
   } | null>(null);
+
+  const filteredCourses = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return courses.filter((course) => {
+      const matchesStatus = statusFilter === "all" || course.status === statusFilter;
+      if (!matchesStatus) return false;
+      if (!query) return true;
+
+      return (
+        course.title.toLowerCase().includes(query)
+        || course.description.toLowerCase().includes(query)
+      );
+    });
+  }, [courses, searchQuery, statusFilter]);
 
   const {
     statusByDocId,
@@ -210,6 +226,20 @@ export default function CourseManagementPage() {
             <p className="mt-2 text-sm text-gray-500">
               Create courses and attach documents
             </p>
+            <div className="mt-3 inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 p-1">
+              <Link
+                to="/courses/manage"
+                className="rounded-md bg-gray-900 px-2.5 py-1 text-xs font-medium text-white"
+              >
+                Manage
+              </Link>
+              <Link
+                to="/triage"
+                className="rounded-md px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-white hover:text-gray-900"
+              >
+                Triage
+              </Link>
+            </div>
           </div>
           <button
             type="button"
@@ -218,6 +248,41 @@ export default function CourseManagementPage() {
           >
             New Course
           </button>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-[1fr_180px]">
+          <div className="relative">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+            >
+              <path
+                fillRule="evenodd"
+                d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search courses"
+              className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-1"
+            />
+          </div>
+
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value as "all" | Course["status"])}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-1"
+          >
+            <option value="all">All statuses</option>
+            <option value="OPEN">Open</option>
+            <option value="CLOSED">Closed</option>
+            <option value="COMING_SOON">Coming soon</option>
+          </select>
         </div>
 
         {loading && (
@@ -243,9 +308,15 @@ export default function CourseManagementPage() {
           </p>
         )}
 
-        {!loading && courses.length > 0 && (
+        {!loading && !error && courses.length > 0 && filteredCourses.length === 0 && (
+          <p className="text-sm text-gray-500">
+            No courses match your search/filter.
+          </p>
+        )}
+
+        {!loading && filteredCourses.length > 0 && (
           <div className="flex flex-col gap-3">
-            {courses.map((course) => {
+            {filteredCourses.map((course) => {
               const isSelected = selectedCourse?.id === course.id;
               const difficultyKey = course.difficulty.toLowerCase();
               const docs = docsByCourse[course.id] ?? [];
@@ -453,6 +524,21 @@ export default function CourseManagementPage() {
                                   </span>
                                 )}
                               </button>
+                              <Link
+                                to={`/triage?courseId=${course.id}`}
+                                className="shrink-0 rounded-full p-1 text-gray-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+                                title="Open triage"
+                                aria-label="Open triage"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                  className="h-4 w-4"
+                                >
+                                  <path fillRule="evenodd" d="M2 10a8 8 0 1 1 16 0 8 8 0 0 1-16 0Zm8.75-4.75a.75.75 0 0 0-1.5 0v5c0 .199.079.39.22.53l2.5 2.5a.75.75 0 1 0 1.06-1.06l-2.28-2.28V5.25Z" clipRule="evenodd" />
+                                </svg>
+                              </Link>
                               <button
                                 type="button"
                                 onClick={() =>

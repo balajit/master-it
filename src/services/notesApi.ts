@@ -38,7 +38,7 @@ export async function createLessonNote(
   content: string,
 ): Promise<NoteResponse> {
   const { data, error } = await client.POST("/api/v1/notes", {
-    body: { content, lesson_id: lessonId, unit_id: null },
+    body: { content, lesson_id: lessonId },
   });
 
   if (error || !data) {
