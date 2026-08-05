@@ -52,12 +52,12 @@ interface FlashcardPracticeProps {
   cards: FlashcardResponse[];
   loading: boolean;
   error: string | null;
-  lessonId: number | null;
+  lessonId: string | null;
   onRefresh: () => void;
   onCreate: (front: string, back: string) => Promise<void>;
   onGenerate: (force?: boolean) => Promise<void>;
-  onDelete: (cardId: number) => Promise<void>;
-  onUpdate: (cardId: number, front: string, back: string) => Promise<void>;
+  onDelete: (cardId: string) => Promise<void>;
+  onUpdate: (cardId: string, front: string, back: string) => Promise<void>;
 }
 
 type BackMode = "paragraph" | "list";
@@ -101,10 +101,10 @@ export default function FlashcardPractice({
   const [createError, setCreateError] = useState<string | null>(null);
   const [createBusy, setCreateBusy] = useState(false);
   const [generateBusy, setGenerateBusy] = useState(false);
-  const [deleteBusyId, setDeleteBusyId] = useState<number | null>(null);
-  const [deleteConfirmCardId, setDeleteConfirmCardId] = useState<number | null>(null);
+  const [deleteBusyId, setDeleteBusyId] = useState<string | null>(null);
+  const [deleteConfirmCardId, setDeleteConfirmCardId] = useState<string | null>(null);
 
-  const [editingCardId, setEditingCardId] = useState<number | null>(null);
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [editFront, setEditFront] = useState("");
   const [editBack, setEditBack] = useState("");
   const [editBackMode, setEditBackMode] = useState<BackMode>("paragraph");
@@ -112,8 +112,9 @@ export default function FlashcardPractice({
   const [editBusy, setEditBusy] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
 
-  const [hiddenCardIds, setHiddenCardIds] = useState<Record<number, boolean>>({});
+  const [hiddenCardIds, setHiddenCardIds] = useState<Record<string, boolean>>({});
 
   const filteredBaseCards = useMemo(() => {
     return cards.filter((card) => !hiddenCardIds[card.id]);
@@ -141,6 +142,7 @@ export default function FlashcardPractice({
     setHiddenCardIds({});
     setDeleteConfirmCardId(null);
     setCollapsed(true);
+    setShowAddForm(false);
   }, [lessonId]);
 
   useEffect(() => {
@@ -193,7 +195,7 @@ export default function FlashcardPractice({
     }
   }
 
-  async function handleDelete(cardId: number) {
+  async function handleDelete(cardId: string) {
     setDeleteBusyId(cardId);
     try {
       await onDelete(cardId);
@@ -306,7 +308,7 @@ export default function FlashcardPractice({
     setDeleteConfirmCardId(null);
   }
 
-  function toggleHideCard(cardId: number) {
+  function toggleHideCard(cardId: string) {
     setHiddenCardIds((prev) => ({
       ...prev,
       [cardId]: !prev[cardId],
@@ -351,6 +353,21 @@ export default function FlashcardPractice({
           <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-600">
             {summaryText}
           </span>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setShowAddForm((prev) => !prev);
+              if (collapsed) setCollapsed(false);
+            }}
+            className="rounded-full border border-gray-200 bg-gray-50 p-1 text-gray-600 transition-colors hover:bg-gray-100"
+            title={showAddForm ? "Hide add flashcard" : "Add a flashcard"}
+            aria-label={showAddForm ? "Hide add flashcard" : "Add a flashcard"}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
+              <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -749,9 +766,25 @@ export default function FlashcardPractice({
           )}
         </div>
 
+        {showAddForm && (
         <div className="rounded-xl border border-gray-200 bg-white p-4">
-          <h4 className="text-sm font-semibold text-gray-900">Add a Flashcard</h4>
-          <p className="mt-1 text-xs text-gray-500">Create a manual front/back card. Back supports Markdown.</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h4 className="text-sm font-semibold text-gray-900">Add a Flashcard</h4>
+              <p className="mt-1 text-xs text-gray-500">Create a manual front/back card. Back supports Markdown.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowAddForm(false)}
+              className="ml-2 rounded-md border border-gray-200 p-1 text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600"
+              title="Close"
+              aria-label="Close add flashcard"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+              </svg>
+            </button>
+          </div>
 
           <div className="mt-3 space-y-3">
             <div>
@@ -868,6 +901,7 @@ export default function FlashcardPractice({
             </Button>
           </div>
         </div>
+        )}
       </div>
         </>
       )}

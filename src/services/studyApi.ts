@@ -27,7 +27,6 @@ interface TransformedStudyData {
   groups: StudyGroup[];
   progressItems: StudyProgressItem[];
   contentMap: Record<string, StudyContent>;
-  lessonIdMap: Record<string, number>;
 }
 
 function toNumber(value: unknown, fallback: number): number {
@@ -355,19 +354,7 @@ export class ApiStudyService implements StudyService {
       });
     }
 
-    const { data: resumeData, error: resumeError } = await client.GET(
-      "/api/v1/users/me/courses/{course_id}/resume",
-      { params: { path: { course_id: courseIdNum } } },
-    );
-
-    if (!resumeError && resumeData?.lesson_id != null) {
-      for (const doc of documents) {
-        const matchedLesson = Object.entries(doc.lessonIdMap).find(
-          ([, dbId]) => dbId === resumeData.lesson_id,
-        );
-        doc.resumeLessonId = matchedLesson?.[0] ?? null;
-      }
-    }
+    // TODO: populate resumeLessonId once the resume endpoint returns a lesson UUID.
 
     const selectedDocument = documents.find((doc) => doc.progressItems.length > 0) ?? documents[0] ?? null;
     const selectedDocumentId = selectedDocument?.documentId ?? null;
@@ -379,7 +366,6 @@ export class ApiStudyService implements StudyService {
       groups:        selectedDocument?.groups ?? [],
       progressItems: selectedDocument?.progressItems ?? [],
       contentMap:    selectedDocument?.contentMap ?? {},
-      lessonIdMap: selectedDocument?.lessonIdMap ?? {},
       resumeLessonId: selectedDocument?.resumeLessonId ?? null,
       documents,
       selectedDocumentId,
@@ -390,14 +376,10 @@ export class ApiStudyService implements StudyService {
     const allGroups: StudyGroup[] = [];
     const allProgressItems: StudyProgressItem[] = [];
     const allContentMap: Record<string, StudyContent> = {};
-    const lessonIdMap: Record<string, number> = {};
 
     const sortedChapters = [...chapters].sort((a, b) => a.order - b.order);
     for (const chapter of sortedChapters) {
-      const { group, progressItems, contentMap } = this._transformChapter(
-        chapter,
-        lessonIdMap,
-      );
+      const { group, progressItems, contentMap } = this._transformChapter(chapter);
       allGroups.push(group);
       allProgressItems.push(...progressItems);
       Object.assign(allContentMap, contentMap);
@@ -407,11 +389,10 @@ export class ApiStudyService implements StudyService {
       groups: allGroups,
       progressItems: allProgressItems,
       contentMap: allContentMap,
-      lessonIdMap,
     };
   }
 
-  private _transformChapter(chapter: Chapter, lessonIdMap: Record<string, number>): {
+  private _transformChapter(chapter: Chapter): {
     group: StudyGroup;
     progressItems: StudyProgressItem[];
     contentMap: Record<string, StudyContent>;
@@ -426,12 +407,6 @@ export class ApiStudyService implements StudyService {
         label:  lesson.title || "Untitled Lesson",
         status: "not_started",
       });
-      const normalizedLessonId =
-        lesson.lesson_id
-        ?? (typeof lesson.id === "string" ? Number(lesson.id) : NaN);
-      if (Number.isFinite(normalizedLessonId)) {
-        lessonIdMap[lesson.id] = normalizedLessonId;
-      }
 
       const contentItems = extractLessonContentItems(lesson.pages ?? []);
       contentMap[lesson.id] = {

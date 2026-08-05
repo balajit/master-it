@@ -2364,9 +2364,9 @@ export interface components {
             /** Course Id */
             course_id?: number | null;
             /** Unit Id */
-            unit_id?: number | null;
+            unit_id?: string | null;
             /** Lesson Id */
-            lesson_id?: number | null;
+            lesson_id?: string | null;
         };
         /**
          * FlashcardGenerateRequest
@@ -2381,8 +2381,11 @@ export interface components {
              * @enum {string}
              */
             scope: "unit" | "lesson";
-            /** Target Id */
-            target_id: number;
+            /**
+             * Target Id
+             * Format: uuid
+             */
+            target_id: string;
             /**
              * Card Scope
              * @enum {string}
@@ -2396,8 +2399,11 @@ export interface components {
         };
         /** FlashcardResponse */
         FlashcardResponse: {
-            /** Id */
-            id: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
             /** Front */
             front: string;
             /** Back */
@@ -2409,9 +2415,9 @@ export interface components {
             /** Course Id */
             course_id?: number | null;
             /** Unit Id */
-            unit_id?: number | null;
+            unit_id?: string | null;
             /** Lesson Id */
-            lesson_id?: number | null;
+            lesson_id?: string | null;
             /** Is Generated */
             is_generated: boolean;
             /**
@@ -3408,9 +3414,9 @@ export interface components {
             /** Content */
             content: string;
             /** Unit Id */
-            unit_id?: number | null;
+            unit_id?: string | null;
             /** Lesson Id */
-            lesson_id?: number | null;
+            lesson_id?: string | null;
         };
         /**
          * NoteNode
@@ -3433,14 +3439,17 @@ export interface components {
         };
         /** NoteResponse */
         NoteResponse: {
-            /** Id */
-            id: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
             /** Content */
             content: string;
             /** Unit Id */
-            unit_id?: number | null;
+            unit_id?: string | null;
             /** Lesson Id */
-            lesson_id?: number | null;
+            lesson_id?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -7550,7 +7559,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                note_id: number;
+                note_id: string;
             };
             cookie?: never;
         };
@@ -7585,7 +7594,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                note_id: number;
+                note_id: string;
             };
             cookie?: never;
         };
@@ -7614,7 +7623,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                unit_id: number;
+                unit_id: string;
             };
             cookie?: never;
         };
@@ -7645,7 +7654,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                lesson_id: number;
+                lesson_id: string;
             };
             cookie?: never;
         };
@@ -7773,7 +7782,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                card_id: number;
+                card_id: string;
             };
             cookie?: never;
         };
@@ -7808,7 +7817,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                card_id: number;
+                card_id: string;
             };
             cookie?: never;
         };
@@ -7837,7 +7846,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                unit_id: number;
+                unit_id: string;
             };
             cookie?: never;
         };
@@ -7868,7 +7877,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                lesson_id: number;
+                lesson_id: string;
             };
             cookie?: never;
         };

@@ -408,12 +408,14 @@ function RenderItem({ item, index }: { item: ContentItem; index: number }) {
         </div>
       );
 
-    case "image":
+    case "image": {
+      const imgSrc = item.imageUrl
+        || (item.data ? `data:${item.mimeType || "image/png"};base64,${item.data}` : null);
       return (
         <figure key={index} className="my-3 text-center">
-          {item.data && (
+          {imgSrc && (
             <img
-              src={item.imageUrl || `data:image/png;base64,${item.data}`}
+              src={imgSrc}
               alt={item.altText || item.caption || ""}
               className="mx-auto max-w-full rounded-lg border border-gray-200"
             />
@@ -428,6 +430,7 @@ function RenderItem({ item, index }: { item: ContentItem; index: number }) {
           )}
         </figure>
       );
+    }
 
     case "question": {
       const kind = getQuestionKind(item.questionType);

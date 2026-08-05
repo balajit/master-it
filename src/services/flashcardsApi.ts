@@ -12,7 +12,7 @@ function formatApiError(prefix: string, error: unknown): string {
   return `${prefix}: ${JSON.stringify(error)}`;
 }
 
-export async function getLessonFlashcards(lessonId: number): Promise<FlashcardResponse[]> {
+export async function getLessonFlashcards(lessonId: string): Promise<FlashcardResponse[]> {
   const { data, error } = await client.GET("/api/v1/lessons/{lesson_id}/flashcards", {
     params: { path: { lesson_id: lessonId } },
   });
@@ -25,7 +25,7 @@ export async function getLessonFlashcards(lessonId: number): Promise<FlashcardRe
 }
 
 export async function createLessonFlashcard(
-  lessonId: number,
+  lessonId: string,
   front: string,
   back: string,
 ): Promise<FlashcardResponse> {
@@ -46,7 +46,7 @@ export async function createLessonFlashcard(
 }
 
 export async function generateLessonFlashcards(
-  lessonId: number,
+  lessonId: string,
   force = false,
 ): Promise<FlashcardResponse[]> {
   const { data, error } = await client.POST("/api/v1/flashcards/generate", {
@@ -65,7 +65,7 @@ export async function generateLessonFlashcards(
   return data;
 }
 
-export async function deleteFlashcard(cardId: number): Promise<void> {
+export async function deleteFlashcard(cardId: string): Promise<void> {
   const { error } = await client.DELETE("/api/v1/flashcards/{card_id}", {
     params: { path: { card_id: cardId } },
   });
@@ -76,7 +76,7 @@ export async function deleteFlashcard(cardId: number): Promise<void> {
 }
 
 export async function updateFlashcard(
-  cardId: number,
+  cardId: string,
   front: string,
   back: string,
 ): Promise<FlashcardResponse> {

@@ -35,19 +35,19 @@ interface UseNotesResult {
 
 const DEBOUNCE_MS = 800;
 
-export function useNotes(lessonKey: string | null, lessonId: number | null): UseNotesResult {
+export function useNotes(lessonKey: string | null, lessonId: string | null): UseNotesResult {
   const [value,  setValue]  = useState<string>("");
   const [dirty, setDirty] = useState<boolean>(false);
   const [status, setStatus] = useState<NoteStatus>("idle");
 
   // Track the DB id of the note row so we can update rather than re-create.
-  const noteIdRef = useRef<number | null>(null);
-  const noteLessonIdRef = useRef<number | null>(null);
+  const noteIdRef = useRef<string | null>(null);
+  const noteLessonIdRef = useRef<string | null>(null);
   const latestValueRef = useRef<string>("");
   const dirtyRef = useRef<boolean>(false);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lessonIdRef = useRef<number | null>(lessonId);
+  const lessonIdRef = useRef<string | null>(lessonId);
   const lessonKeyRef = useRef<string | null>(lessonKey);
 
   const clearPendingSave = useCallback(() => {
@@ -57,7 +57,7 @@ export function useNotes(lessonKey: string | null, lessonId: number | null): Use
     }
   }, []);
 
-  const persistForLesson = useCallback(async (targetLessonId: number, text: string) => {
+  const persistForLesson = useCallback(async (targetLessonId: string, text: string) => {
     setStatus("saving");
     try {
       const canUpdateExisting =

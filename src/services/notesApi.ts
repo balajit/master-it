@@ -19,7 +19,7 @@ export type NoteResponse = components["schemas"]["NoteResponse"];
 /**
  * Fetch all notes for a specific lesson. Returns an empty array on error.
  */
-export async function fetchLessonNotes(lessonId: number): Promise<NoteResponse[]> {
+export async function fetchLessonNotes(lessonId: string): Promise<NoteResponse[]> {
   const { data, error } = await client.GET("/api/v1/lessons/{lesson_id}/notes", {
     params: { path: { lesson_id: lessonId } },
   });
@@ -34,7 +34,7 @@ export async function fetchLessonNotes(lessonId: number): Promise<NoteResponse[]
  * Create a lesson-scoped note. Throws if the request fails.
  */
 export async function createLessonNote(
-  lessonId: number,
+  lessonId: string,
   content: string,
 ): Promise<NoteResponse> {
   const { data, error } = await client.POST("/api/v1/notes", {
@@ -53,7 +53,7 @@ export async function createLessonNote(
  * Update an existing note by its DB integer id. Throws if the request fails.
  */
 export async function updateNote(
-  noteId: number,
+  noteId: string,
   content: string,
 ): Promise<NoteResponse> {
   const { data, error } = await client.PUT("/api/v1/notes/{note_id}", {
@@ -72,7 +72,7 @@ export async function updateNote(
 /**
  * Delete a note by its DB integer id. Silently ignores 404.
  */
-export async function deleteNote(noteId: number): Promise<void> {
+export async function deleteNote(noteId: string): Promise<void> {
   await client.DELETE("/api/v1/notes/{note_id}", {
     params: { path: { note_id: noteId } },
   });

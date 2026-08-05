@@ -132,7 +132,7 @@ export default function StudyPage() {
   const [draggingNotes, setDraggingNotes] = useState(false);
   const [notesOffset, setNotesOffset] = useState<Offset>({ x: 0, y: 0 });
   const [selectionText, setSelectionText] = useState<string>("");
-  const [lessonFlashcards, setLessonFlashcards] = useState<Record<number, FlashcardResponse[]>>({});
+  const [lessonFlashcards, setLessonFlashcards] = useState<Record<string, FlashcardResponse[]>>({});
   const [flashcardsLoading, setFlashcardsLoading] = useState(false);
   const [flashcardsError, setFlashcardsError] = useState<string | null>(null);
 
@@ -208,7 +208,7 @@ export default function StudyPage() {
     const resume = activeDocument.resumeLessonId;
     const firstItem = activeDocument.groups[0]?.items[0]?.id ?? null;
     setSelectedId((current) => {
-      if (current && (activeDocument.contentMap[current] || activeDocument.lessonIdMap[current] !== undefined)) {
+      if (current && activeDocument.contentMap[current]) {
         return current;
       }
       return resume ?? firstItem;
@@ -216,13 +216,11 @@ export default function StudyPage() {
   }, [activeDocument]);
 
   // ── Notes integration (must be before early returns — hooks order) ──
-  const lessonId = activeDocument && selectedId != null ? (activeDocument.lessonIdMap[selectedId] ?? null) : null;
+  const lessonId = selectedId ?? null;
   const notes = useNotes(selectedId, lessonId);
-  const notesUnavailableMessage = lessonId == null
-    ? "Notes are unavailable for this lesson because it is missing a backend lesson_id."
-    : null;
+  const notesUnavailableMessage = null;
 
-  const loadLessonFlashcards = useCallback(async (targetLessonId: number) => {
+  const loadLessonFlashcards = useCallback(async (targetLessonId: string) => {
     setFlashcardsLoading(true);
     setFlashcardsError(null);
     try {
@@ -266,7 +264,7 @@ export default function StudyPage() {
     }
   }, [lessonId]);
 
-  const handleDeleteFlashcard = useCallback(async (cardId: number) => {
+  const handleDeleteFlashcard = useCallback(async (cardId: string) => {
     if (lessonId == null) {
       throw new Error("This lesson is missing lesson_id and cannot delete flashcards.");
     }
@@ -274,7 +272,7 @@ export default function StudyPage() {
     await loadLessonFlashcards(lessonId);
   }, [lessonId, loadLessonFlashcards]);
 
-  const handleUpdateFlashcard = useCallback(async (cardId: number, front: string, back: string) => {
+  const handleUpdateFlashcard = useCallback(async (cardId: string, front: string, back: string) => {
     if (lessonId == null) {
       throw new Error("This lesson is missing lesson_id and cannot update flashcards.");
     }
