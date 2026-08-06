@@ -31,7 +31,8 @@ function describeRequestBody(body: BodyInit | null | undefined): string {
       : body;
   }
   if (body instanceof FormData) {
-    const keys = [...body.keys()];
+    const keys: string[] = [];
+    body.forEach((_, key) => keys.push(key));
     return `FormData(${keys.join(",")})`;
   }
   if (body instanceof URLSearchParams) {
