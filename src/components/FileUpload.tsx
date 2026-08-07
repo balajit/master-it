@@ -30,7 +30,7 @@ function validateFile(file: File): string | null {
 function isSafeUrl(value: string): boolean {
   try {
     const parsed = new URL(value);
-    return parsed.protocol === "https:";
+    return parsed.protocol === "https:" || parsed.protocol === "http:";
   } catch {
     return false;
   }
@@ -57,6 +57,14 @@ export default function FileUpload({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // URL-to-PDF preview state
+  const [urlPdfPreview, setUrlPdfPreview] = useState<{
+    blobUrl: string;
+    tempId: string;
+    filename: string;
+  } | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
   function reset() {
     setError(null);
@@ -193,11 +201,81 @@ export default function FileUpload({
     reset();
 
     if (!isSafeUrl(trimmed)) {
-      setError("Only valid HTTPS URLs are allowed");
+      setError("Only valid HTTP or HTTPS URLs are allowed");
       return;
     }
 
-    setError("URL import is currently disabled. Download and upload the file directly.");
+    setUploading(true);
+
+    try {
+      const { response } = await client.POST(
+        "/api/courses/{course_id}/documents/convert-url",
+        {
+          params: { path: { course_id: courseId } },
+          body: { url: trimmed },
+          parseAs: "stream",
+        },
+      );
+
+      if (!response.ok) {
+        if (response.status === 400) throw new Error("Invalid or unreachable URL");
+        if (response.status === 404) throw new Error("Course not found");
+        if (response.status === 408) throw new Error("Page load timed out");
+        if (response.status === 503) throw new Error("URL-to-PDF service unavailable");
+        throw new Error(`URL conversion failed (${response.status})`);
+      }
+
+      const tempId = response.headers.get("X-Temp-Id") ?? "";
+      const filename = response.headers.get("X-Filename") ?? "preview.pdf";
+
+      if (!tempId) throw new Error("Server did not return a preview ID");
+
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+
+      setUrlPdfPreview({ blobUrl, tempId, filename });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "URL conversion failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleConfirmUrl() {
+    if (!urlPdfPreview) return;
+
+    reset();
+    setConfirming(true);
+
+    try {
+      const { error: err, data } = await client.POST(
+        "/api/courses/{course_id}/documents/confirm-url-pdf",
+        {
+          params: { path: { course_id: courseId } },
+          body: { temp_id: urlPdfPreview.tempId },
+        },
+      );
+
+      if (err || !data) throw new Error("Failed to confirm document");
+
+      URL.revokeObjectURL(urlPdfPreview.blobUrl);
+      setUrlPdfPreview(null);
+      setUrl("");
+      setSuccess(`Imported ${urlPdfPreview.filename}`);
+      onUploaded?.();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Confirmation failed");
+    } finally {
+      setConfirming(false);
+    }
+  }
+
+  function handleCancelUrl() {
+    if (urlPdfPreview) {
+      URL.revokeObjectURL(urlPdfPreview.blobUrl);
+      setUrlPdfPreview(null);
+    }
+    reset();
   }
 
   return (
@@ -301,7 +379,7 @@ export default function FileUpload({
         <button
           type="button"
           onClick={handlePickFile}
-          disabled={uploading}
+          disabled={uploading || !!urlPdfPreview}
           className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
         >
           {uploadMode === "sample" ? "Choose Source File" : "Choose File"}
@@ -323,13 +401,13 @@ export default function FileUpload({
           onKeyDown={(e) => {
             if (e.key === "Enter") handleFetchUrl();
           }}
-          disabled={uploading}
+          disabled={uploading || !!urlPdfPreview}
           className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 disabled:opacity-50"
         />
         <button
           type="button"
           onClick={handleFetchUrl}
-          disabled={uploading || !url.trim()}
+          disabled={uploading || !url.trim() || !!urlPdfPreview}
           className="shrink-0 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
         >
           Fetch
@@ -358,7 +436,38 @@ export default function FileUpload({
               d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Z"
             />
           </svg>
-          Uploading...
+          {uploading ? "Converting URL to PDF…" : "Uploading..."}
+        </div>
+      )}
+
+      {urlPdfPreview && (
+        <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
+          <div className="flex items-center justify-between">
+            <p className="truncate text-xs font-medium text-gray-700">
+              {urlPdfPreview.filename}
+            </p>
+            <button
+              type="button"
+              onClick={handleCancelUrl}
+              disabled={confirming}
+              className="ml-2 shrink-0 text-xs text-gray-400 hover:text-gray-600 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
+          <iframe
+            src={urlPdfPreview.blobUrl}
+            title="PDF preview"
+            className="h-64 w-full rounded-lg border border-gray-200 bg-white"
+          />
+          <button
+            type="button"
+            onClick={handleConfirmUrl}
+            disabled={confirming}
+            className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
+          >
+            {confirming ? "Importing…" : "Import Document"}
+          </button>
         </div>
       )}
 
